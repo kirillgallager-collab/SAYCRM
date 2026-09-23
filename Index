@@ -1,0 +1,2382 @@
+<!DOCTYPE html>
+<!--
+  SAYCRM — Index.html (интерфейс, одна страница)
+  Версия: v0.8 · 22.09.2026
+  v1.0:
+   - Один и тот же файл работает и внутри Google, и на своём хостинге (GitHub Pages и т.п.).
+     На хостинге запросы уходят на /exec (POST текстом, при блокировке — запасной путь JSONP),
+     плашки «создано пользователем Google Apps Script» нет.
+     Чтобы включить хостинг, впишите ссылку развёртывания в API_URL ниже.
+   - Иконка на телефоне (PWA): рядом с index.html положите manifest.json (выдан отдельным файлом).
+  v0.9.1:
+   - Вместо тёмного экрана ожидания — маленькая карточка внизу с подсказкой для сотрудника
+     (список ПОДСКАЗКИ СОТРУДНИКАМ, меняется в «Админ» → «Списки»).
+   - Шаблоны сообщений: можно добавлять новые, переименовывать и удалять.
+  v0.9:
+   - Рассылка (кнопка на «Заказах», галочка «Рассылка»): подбор клиентов — давно не заказывал, скоро памятная
+     дата, много бонусов, число заказов, сумма покупок; шаблон с подстановкой имени; отправка по одному
+     в WhatsApp/Telegram, копирование текста и номеров.
+   - Прайсы: фильтры по товару в составе, по цене и по числу цветов в букете.
+   - Тёмная тема: поле при вводе больше не светлеет, выпадающие списки и календарь тоже тёмные.
+   - Кнопки в строке больше не вкладываются друг в друга (из-за этого «Печать чека» была узкой).
+  v0.8.3:
+   - Сообщение клиенту про бонусы: в карточке клиента кнопка «Написать про бонусы» (WhatsApp, Telegram, MAX).
+     Новые шаблоны «Бонусы» и «Памятная дата», подстановка {бонусы}.
+  v0.8.2:
+   - Тёмная тема починена: блок тёмных цветов стоял в CSS выше светлых, поэтому светлые его перебивали
+     (поля оставались кремовыми, текст белым). Теперь тёмные правила идут последними, плюс отдельно
+     заданы цвета полей, подсказок и плашек «к доплате».
+   - «Прайсы» — отдельная вкладка внизу, видна по галочке «Создавать прайс» (или тем, кто создаёт заказы).
+   - Кнопки в строке стали такого же размера, как обычные.
+  v0.8.1:
+   - Поиск заказов сразу везде, включая архив: по тексту и по выбранной дате, кнопки «искать в архиве» больше нет.
+   - Прайс — компактной сеткой по 2–3 позиции в строку.
+   - «Печать чека» и «Карточка сборки» — крупные кнопки в одну строку.
+   - Тёмная тема: активные кнопки и вкладки читаются (текст тёмный на светлой подсветке).
+   - На складе видно: «минимум: 20 (общий)» или «минимум: 30 (свой)».
+  v0.8:
+   - Прайсы (Склад → «Прайсы»): название, цена, описание, состав; «Создать заказ» одной кнопкой.
+     Цена берётся из прайса, со склада списывается состав. Правит тот, у кого галочка «Создавать прайс».
+   - Блок «Система лояльности» в заказе: скидка и бонусы рядом, до итоговой цены, с подсказкой.
+   - Светлая и тёмная темы (переключатель в шапке, выбор запоминается).
+   - Печать: товарный чек, карточка заказа для сборки, ценники на витрину.
+   - «Написать клиенту»: WhatsApp, Telegram, MAX; текст по шаблону статуса.
+   - Поиск заказов в архиве. Диагностика убрана (осталась по тройному касанию версии).
+     Статус «Ожидает самовывоза» больше не ставится.
+  v0.6:
+   - Вкладка «Админ» (бывшие «Отчёты»): отчёты + настройки из приложения — параметры, сотрудники с галочками,
+     списки и скидки, товары (категория, статус, своя цена, минимум), бонусы, обслуживание (копия, архив, ночные задачи).
+   - «Клиенты» (кнопка на вкладке «Заказы»): поиск, карточка с историей заказов и бонусов, правка имени и дат.
+   - Скидка из списка в форме заказа — цена продажи пересчитывается сама.
+   - Касса: «Пересчёт» — ввести фактическую наличность, разница запишется сама.
+   - Защита входа: 5 неверных ПИН с устройства — пауза 5 минут.
+  v0.5:
+   - Отчёты считает сервер: любой период (год и больше), с учётом архива. Быстрые периоды: сегодня, вчера,
+     7/30 дней, этот и прошлый месяц, год.
+   - Продажи: сравнение с прошлым таким же периодом, источники клиентов со средним чеком.
+   - Продажи сотрудников: + средний чек и маржа. Товары и маржа. Новый отчёт «Закупочные цены».
+   - Кнопка «Выгрузить в Google Таблицу» в каждом отчёте.
+  v0.4.3:
+   - Галочки применяются без перезахода: вкладки и кнопки пересчитываются при каждом обновлении данных;
+     данные тихо обновляются раз в минуту (если не открыта форма и нет сохранения) — видно и новые заказы коллег.
+   - Бонусы: причина из списка (ПРИЧИНЫ БОНУСОВ) + комментарий; «Бонусы всем» — начислить или снять у всех.
+  v0.4.2:
+   - Вкладки «Отчёты» и «Админ» объединены: одна вкладка «Отчёты» — сверху плитки отчётов (галочка «Отчёты»),
+     ниже блок «Администратор» (только администратору).
+  v0.4.1:
+   - Вкладка «Админ» (только администратор): корректировка бонусов клиента без захода в таблицу.
+   - «Витрина» — кнопка рядом с «Новый заказ»; у букета «Продать сейчас» (полная оплата) и «В заказ»
+     (обычная форма: доставка, предоплата, оплата при получении; заказ сразу «Собран»).
+   - Бонусы — сразу под клиентом; «Взять с клиента» подсвечивается сразу под предоплатой.
+   - «Прежняя цена» в изменении состава подставляет старую цену.
+   - Кнопки: по 2 в строку; одна — на всю строку; три — 2 + 1 на всю строку.
+  v0.4:
+   - Бонусы: списание в форме заказа (после выбора клиента), в карточке «Списано/Начислено бонусов».
+   - Отмена/отказ оплаченного заказа: вернуть деньги (способ, сумма) или не возвращать. «Вернуть переплату».
+   - Администратор: «Удалить заказ» (незакрытый, без оплат).
+   - «Изменить состав» при сборке: −/+, ✕, добавить позицию; поле цены пустое с подсказкой прежней цены.
+   - Склад: «Закупка» (постоянный минимум, копирование списка, приход по списку), «Инвентаризация».
+   - Приход: количество и цену можно вписывать прямо в строках накладной.
+   - Вкладка «Витрина»: собрать букет, продать сразу с оплатой, разобрать (списать / вернуть на склад).
+   - Отчёт «Бонусы».
+  v0.3.3:
+   - Без окна загрузки: заказ, статусы, оплаты, комментарии, приход, списание, касса уходят в фоновую очередь
+     (по одному, по порядку). Сверху маленькая плашка «Сохраняю…». Можно сразу оформлять следующий заказ.
+     Если сервер отказал — окно с причиной и кнопкой «Вернуться к заказу» (данные формы не теряются).
+   - Касса: причина внесения/изъятия из списка, комментарий по желанию. Отчёт «Внесения и изъятия».
+   - «Продажи сотрудников» — выручка тому, кто создал заказ; «Касса» (деньги) — тому, кто принял оплату.
+  v0.3.2:
+   - «Отчёты» — снова отдельная вкладка внизу (плитки по 2 в ряд). В шапке вместо «Отчёты» — «Касса».
+   - «Касса»: остаток наличных, все приходы и расходы, «Внести» (размен) и «Изъять» (закупка) с комментарием.
+   - Быстрее: после действия данные приходят в том же ответе — второй загрузки нет.
+   - Отчёт «Сотрудники»: список сотрудников и сколько денег принял каждый (как по способам оплаты).
+  v0.3.1:
+   - Кнопки «Итоги дня» и «Отчёты» слева в шапке (как «Выйти» справа). Вкладка «Итоги» убрана из нижнего меню.
+   - «Отчёты»: плитки по 2 в ряд (Касса, Продажи, Сотрудники, Долги, Отмены и отказы, Товары); каждая
+     открывает полный отчёт с фильтрами периода (и сотрудника, где уместно).
+   - Поиск клиента сам: по 4 последним цифрам или по полному номеру (кнопки «Найти» больше нет).
+     Если у клиента уже были заказы — источник «Постоянный клиент» подставляется сам.
+   - Галочка «Получатель — сам заказчик».
+  v0.3:
+   - Кнопки и вкладки показываются по галочкам сотрудника (права), а не по должности.
+   - «Принять оплату» в карточке (частями, несколькими способами). При «Выдан самовывозом» и «Получен
+     покупателем» с долгом — обязательное окно оплаты на всю сумму долга; в долг не выдаём.
+   - «Мои итоги сегодня» у каждого: создал, собрал, выдал, принял денег по способам.
+   - «Касса за день» в «Итогах»: по способам оплаты и по сотрудникам.
+   - Время выдачи: часы + минуты 00/15/30/45. Самовывоз/Доставка, получатель и адрес — отдельные поля.
+  v0.2:
+   - Новый светлый дизайн по образцу пользователя: бежевый фон, светлые поля, тёмные кнопки-«таблетки»,
+     плавающее нижнее меню, логотип засечками.
+   - Заказ под поставку: можно добавить больше, чем свободно, — предупреждение и подтверждение.
+   - «Выйти» больше не даёт белый экран (без перезагрузки страницы).
+   - Вход сохраняется после перезагрузки страницы (пока сессия жива: 6 ч без действий).
+   - Кнопка «Дата» на заказах работает (обычное поле даты вместо программного вызова календаря,
+     который браузер блокирует внутри Google Apps Script).
+   - «К доплате» ярко подсвечено у всех ролей в списке и в карточке.
+   - Флорист выдаёт заказы; после «Взять в сборку» карточка остаётся открытой.
+   - Логист не видит склад. Администратор: отчёт по отменам и отказам во вкладке «Итоги».
+  v0.1: свои окна вместо alert/prompt, единый call() (R4), версия и диагностика на входе, вкладки по ролям,
+   сортировка по дате выдачи, форма заказа с поиском клиента, карточка с действиями по статусу,
+   приход несколькими строками, списание, сжатие фото.
+-->
+<html lang="ru">
+<head>
+<base target="_top">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#f5f3ef">
+<link rel="manifest" href="manifest.json">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--page:#ebe8e3;--bg:#f5f3ef;--field:#e9e6e1;--line:#dcd8d2;--card:#fbfaf8;--ink:#2b2b2b;--txt:#333;--mut:#7d7a75;--dark:#2e2e2e;--red:#c0392b;--pay:#d9480f;--pay-bg:#ffe4d4;--ok:#2f7d4a;--ok-bg:#e3f1e7;--rad:16px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:var(--page);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;margin:0;font-size:15px;line-height:1.4}
+#app{max-width:480px;margin:0 auto;background:var(--bg);min-height:100vh;position:relative;padding-bottom:110px}
+h2{margin:0;font-weight:400;font-size:21px;color:var(--ink);text-align:center}
+h3{margin:0 0 10px;font-size:12px;font-weight:500;letter-spacing:.6px;text-transform:uppercase;color:var(--mut)}
+.logo{font-family:Georgia,"Times New Roman",serif;letter-spacing:4px;color:var(--ink);font-weight:400}
+.top{padding:50px 18px 10px;border-bottom:1px solid var(--line);text-align:center;position:relative}
+.top .logo{font-size:24px}
+.top .who{font-size:12px;color:var(--mut)}
+.top .acts{position:absolute;right:12px;top:10px;display:flex;gap:6px}
+.top .acts button{width:auto;padding:6px 10px;font-size:12px;margin:0}
+.top .acts-l{position:absolute;left:12px;top:10px;display:flex;gap:6px}
+.top .acts-l button{width:auto;padding:6px 10px;font-size:12px;margin:0}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:var(--rad);padding:16px 12px;min-height:84px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between}
+.tile:active{border-color:var(--ink)}
+.tile b{font-size:15px;color:var(--ink);font-weight:600}
+.tile span{font-size:12px;color:var(--mut)}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl td,.tbl th{padding:7px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.tbl th{color:var(--mut);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
+.tbl td.r,.tbl th.r{text-align:right;white-space:nowrap}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.btns>button{margin:0;padding:14px 10px;font-size:14px}
+.btns>button:last-child:nth-child(odd){grid-column:1/-1}
+.tiles>.tile:last-child:nth-child(odd){grid-column:1/-1}
+:root[data-theme="dark"]{--page:#14161a;--bg:#1b1e24;--field:#252932;--line:#313742;--card:#20242c;--ink:#e8e6e2;--txt:#dcdad6;--mut:#9aa0ab;--dark:#e8e6e2;--pay-bg:#3a2317;--ok-bg:#1e3326}
+:root[data-theme="dark"] .nav{background:#20242c}
+:root[data-theme="dark"] #toast,:root[data-theme="dark"] #qBar{color:#14161a}
+:root[data-theme="dark"] .pay{background:#3a2317;color:#ffb38a}
+:root[data-theme="dark"] .pay-big{background:#3a2317;color:#ffb38a;border-color:#ffb38a}
+:root[data-theme="dark"] .warn{background:#3a3218;color:#ffd98a}
+:root[data-theme="dark"] input,:root[data-theme="dark"] select,:root[data-theme="dark"] textarea{color:#f2f0ec}
+:root[data-theme="dark"] input::placeholder,:root[data-theme="dark"] textarea::placeholder{color:#7d838f}
+:root[data-theme="dark"] select option{background:#252932;color:#f2f0ec}
+:root[data-theme="dark"] input:focus,:root[data-theme="dark"] select:focus,:root[data-theme="dark"] textarea:focus{background:#2c313b}
+:root[data-theme="dark"] input[type=date],:root[data-theme="dark"] input[type=time],:root[data-theme="dark"] input[type=number]{color-scheme:dark}
+:root[data-theme="dark"] .dlg-box{box-shadow:0 10px 30px rgba(0,0,0,.6)}
+.grid3{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.pcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;font-size:13px}
+.pcard b{display:block;font-size:13px;line-height:1.2;margin-bottom:2px}
+.pcard .p{font-weight:700;font-size:15px;color:var(--ink)}
+.pcard button{padding:8px 4px;font-size:12px;margin:6px 0 0}
+.screen{display:none;padding:20px}.screen.active{display:block}
+.pad{padding:18px}
+.card{background:var(--card);border-radius:var(--rad);padding:14px;margin-bottom:12px;border:1px solid var(--line)}
+.card.tap{cursor:pointer}.card.tap:active{border-color:var(--ink)}
+.card.hot{border-left:4px solid var(--ink)}
+.card.closed{opacity:.55}
+.card.low{border-color:var(--red)}
+label.lbl{display:block;font-size:12px;letter-spacing:.4px;text-transform:uppercase;color:var(--mut);margin:4px 0 6px}
+input,select,textarea{width:100%;background:var(--field);border:1px solid transparent;color:var(--ink);padding:14px 16px;border-radius:14px;margin-bottom:12px;font-size:16px;font-family:inherit}
+input::placeholder,textarea::placeholder{color:#9a968f}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ink);background:var(--field)}
+button{width:100%;padding:14px;border-radius:26px;border:none;font-weight:600;font-size:14px;letter-spacing:.3px;cursor:pointer;margin-bottom:10px;font-family:inherit}
+button:disabled{opacity:.5}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.btn-main{background:var(--dark);color:var(--bg)}
+.btn-out{background:transparent;color:var(--ink);border:1px dashed #8d8a85}
+.btn-soft{background:var(--field);color:var(--ink)}
+.btn-red{background:transparent;color:var(--red);border:1px solid var(--red)}
+.row{display:flex;gap:10px;align-items:center}.row>*{flex:1}
+.between{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.muted{color:var(--mut);font-size:13px}.small{font-size:12px}
+.err{color:var(--red);font-size:13px}
+.hr{border:none;border-top:1px solid var(--line);margin:18px 0}
+.status{display:inline-block;font-size:11px;padding:3px 10px;border-radius:20px;background:var(--field);color:var(--ink);letter-spacing:.3px}
+.status.done{background:var(--ok-bg);color:var(--ok)}
+.status.off{background:transparent;color:var(--mut);border:1px solid var(--line)}
+.pay{display:inline-block;background:var(--pay-bg);color:var(--pay);font-weight:700;border-radius:10px;padding:3px 9px;font-size:13px}
+.pay-big{background:var(--pay-bg);color:var(--pay);border:2px solid var(--pay);border-radius:14px;padding:12px;text-align:center;font-weight:700;font-size:17px;margin-bottom:12px}
+.warn{background:#fff4d6;color:#8a5a00;border-radius:12px;padding:10px 12px;font-size:13px;margin-bottom:12px}
+.chips{display:flex;gap:8px;overflow-x:auto;margin-bottom:14px;padding-bottom:2px;align-items:center}
+.chip{background:var(--field);padding:9px 15px;border-radius:20px;font-size:13px;white-space:nowrap;cursor:pointer;color:var(--ink);border:1px solid transparent}
+.chip.on{background:var(--dark);color:var(--bg)}
+.chip-date{width:150px;flex:0 0 150px;margin:0;padding:8px 12px;border-radius:20px;font-size:13px}
+.chip-date.on{border-color:var(--ink);background:#fff}
+.nav{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom));width:calc(100% - 24px);max-width:456px;background:#fff;border-radius:30px;box-shadow:0 4px 18px rgba(0,0,0,.12);display:flex;padding:6px;z-index:100}
+.nav-item{flex:1;text-align:center;font-size:11px;letter-spacing:.4px;text-transform:uppercase;color:var(--mut);padding:12px 4px;border-radius:24px;cursor:pointer}
+.nav-item.on{background:var(--dark);color:var(--bg);font-weight:700}
+.tab{display:none}.tab.on{display:block}
+.modal{display:none;position:fixed;inset:0;background:var(--page);z-index:1000;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.modal.on{display:block}
+.modal-in{max-width:480px;margin:0 auto;padding:18px 18px 40px;background:var(--bg);min-height:100%}
+.mhead{display:flex;justify-content:center;align-items:center;position:relative;margin-bottom:18px}
+.close{position:absolute;right:0;top:-4px;background:none;border:none;color:var(--mut);font-size:30px;width:auto;padding:0 6px;margin:0;line-height:1}
+.stock3{display:flex;text-align:center;background:var(--field);border-radius:12px;padding:8px 0}
+.stock3>div{flex:1}.stock3 b{display:block;font-size:17px;color:var(--ink)}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.kv span{color:var(--mut)}.kv b{text-align:right;font-weight:500;color:var(--ink)}
+.line{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:14px}
+.x{background:none;border:none;color:var(--red);width:auto;padding:0 8px;margin:0;font-size:18px}
+.pick{padding:11px 13px;background:var(--field);border-radius:12px;margin-bottom:6px;cursor:pointer;font-size:14px}
+.pick:active{outline:1px solid var(--ink)}
+.opt{display:flex;gap:10px;align-items:center;padding:12px;background:var(--field);border-radius:12px;margin-bottom:8px;cursor:pointer;font-size:14px}
+.opt input{width:auto;margin:0}
+.ph{display:block;padding:12px;border:1px dashed #8d8a85;border-radius:26px;text-align:center;color:var(--ink);text-decoration:none;margin-bottom:10px;font-size:13px;font-weight:600}
+.pre{white-space:pre-wrap;font-size:13px;background:var(--field);border-radius:12px;padding:10px;margin-bottom:10px}
+#loader{position:fixed;inset:0;background:transparent;display:none;z-index:5000;align-items:flex-end;justify-content:center;padding:0 12px 18px}
+#loader.on{display:flex}
+.ldbox{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 6px 24px rgba(0,0,0,.18);padding:14px 16px;max-width:456px;width:100%;display:flex;gap:12px;align-items:center}
+.ldbox .spin{margin:0;width:26px;height:26px;flex:0 0 26px}
+.ldtxt{font-size:14px;color:var(--ink);font-weight:600}
+.ldtip{font-size:12px;color:var(--mut);margin-top:2px;line-height:1.35}
+.spin{width:40px;height:40px;border:3px solid var(--line);border-top-color:var(--ink);border-radius:50%;animation:sp .9s linear infinite;margin-bottom:12px}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation-duration:3s}}
+#dlg{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;z-index:4000;align-items:center;justify-content:center;padding:16px}
+#dlg.on{display:flex}
+.dlg-box{background:var(--bg);border-radius:20px;padding:20px;width:100%;max-width:440px;max-height:86vh;overflow-y:auto;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+.dlg-box h3{font-size:13px;color:var(--ink)}
+#qBar{position:fixed;left:50%;top:8px;transform:translateX(-50%);background:var(--dark);color:#fff;border-radius:18px;padding:6px 14px;font-size:12px;z-index:4600;display:none;align-items:center;gap:8px;max-width:92%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qspin{width:12px;height:12px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:sp .9s linear infinite;flex:0 0 12px}
+@media print{body *{visibility:hidden}#printArea,#printArea *{visibility:visible}#printArea{position:absolute;left:0;top:0;width:100%;background:#fff;color:#000}}
+#printArea{display:none}
+#toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--dark);color:#fff;padding:10px 18px;border-radius:20px;font-size:14px;z-index:4500;display:none;max-width:90%;text-align:center}
+.auth-logo{font-size:40px;text-align:center;margin:14vh 0 4px}
+.ver{text-align:center;color:var(--mut);font-size:11px;margin-top:16px}
+.ver a{color:var(--mut)}
+.diag{font-size:12px;color:var(--mut);white-space:pre-wrap;background:var(--field);border-radius:12px;padding:10px;margin-top:10px;display:none}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ВХОД -->
+  <div id="authSc" class="screen active">
+    <div class="logo auth-logo">SAYCRM</div>
+    <p class="muted" style="text-align:center;margin-bottom:30px;">Цветы, заказы и склад</p>
+    <label class="lbl">ПИН-код</label>
+    <input type="password" id="pin" inputmode="numeric" autocomplete="off" placeholder="••••" style="text-align:center;font-size:22px;letter-spacing:10px;" onkeydown="if(event.key==='Enter')login()">
+    <button class="btn-main" onclick="login()">Войти</button>
+    <div class="ver"><span id="verLbl" onclick="tapVer()"></span></div>
+    <div id="diag" class="diag"></div>
+  </div>
+
+  <!-- РАБОЧАЯ ОБЛАСТЬ -->
+  <div id="mainSc" style="display:none;">
+    <div class="top">
+      <div class="acts-l">
+        <button class="btn-soft" onclick="openDay()">Итоги дня</button>
+        <button class="btn-soft" id="bCash" onclick="openCash()">Касса</button>
+      </div>
+      <div class="logo">SAYCRM</div>
+      <div class="who"><span id="wName"></span> · <span id="wRole"></span></div>
+      <div class="acts">
+        <button class="btn-soft" onclick="toggleTheme()" aria-label="Тема">☾</button>
+        <button class="btn-soft" onclick="loadDb()" aria-label="Обновить">↻</button>
+        <button class="btn-soft" onclick="logoutUi()">Выйти</button>
+      </div>
+    </div>
+    <div class="pad">
+
+      <!-- ЗАКАЗЫ -->
+      <div id="tOrders" class="tab">
+        <div id="ordBtns"></div>
+        <input type="search" id="oq" placeholder="Номер, имя, получатель или цифры телефона" oninput="S.q=this.value;renderOrders();findEverywhere()">
+        <div class="chips">
+          <div class="chip on" id="fAll" onclick="setFilter('all')">Все</div>
+          <div class="chip" id="fToday" onclick="setFilter('today')">Сегодня</div>
+          <div class="chip" id="fTom" onclick="setFilter('tomorrow')">Завтра</div>
+          <input type="date" id="dp" class="chip-date" aria-label="Выбрать дату" onchange="onPickDate(this.value)">
+        </div>
+        <div id="listO"></div>
+      </div>
+
+      <!-- СКЛАД -->
+      <div id="tStock" class="tab">
+        <div id="stkBtns"></div>
+        <input type="search" id="sq" placeholder="Поиск товара" oninput="renderStock()">
+        <div id="listS"></div>
+      </div>
+
+      <!-- ПРАЙСЫ -->
+      <div id="tPr" class="tab">
+        <div id="prBtns"></div>
+        <div class="row">
+          <select id="prItem" onchange="renderPrices()"></select>
+          <input id="prFlw" type="number" inputmode="numeric" placeholder="Цветов от" oninput="renderPrices()">
+        </div>
+        <div class="row">
+          <input id="prMin" type="number" inputmode="decimal" placeholder="Цена от" oninput="renderPrices()">
+          <input id="prMax" type="number" inputmode="decimal" placeholder="Цена до" oninput="renderPrices()">
+        </div>
+        <p class="muted small">Цена берётся из прайса, со склада списывается состав. Состав может стоить дороже цены — это скидка за объём.</p>
+        <div id="prList"></div>
+      </div>
+
+      <!-- ОТЧЁТЫ -->
+      <div id="tRep" class="tab">
+        <div id="repBlock">
+          <h3>Сводная отчётность</h3>
+          <div class="tiles" id="repTiles"></div>
+        </div>
+        <div id="admBlock" style="margin-top:18px;">
+          <h3>Администратор</h3>
+          <div class="tiles">
+            <div class="tile" onclick="openAdm('params')"><b>Параметры</b><span>коэффициент, бонусы, архив…</span></div>
+            <div class="tile" onclick="openAdm('emps')"><b>Сотрудники</b><span>ПИН, должность, галочки прав</span></div>
+            <div class="tile" onclick="openAdm('lists')"><b>Списки и скидки</b><span>категории, оплаты, причины…</span></div>
+            <div class="tile" onclick="openAdm('items')"><b>Товары</b><span>категория, своя цена, минимум</span></div>
+            <div class="tile" onclick="openBonusAdj()"><b>Бонусы клиента</b><span>начислить или снять одному</span></div>
+            <div class="tile" onclick="bonusAll()"><b>Бонусы всем</b><span>подарок к празднику или снять у всех</span></div>
+            <div class="tile" onclick="openAdm('roles')"><b>Шаблоны должностей</b><span>галочки для новых сотрудников</span></div>
+            <div class="tile" onclick="openAdm('msgs')"><b>Шаблоны сообщений</b><span>тексты клиенту по статусу</span></div>
+            <div class="tile" onclick="openAdm('tools')"><b>Обслуживание</b><span>копия, архив, ночные задачи</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ВЫДАЧА -->
+      <div id="tLog" class="tab">
+        <h3>Собранные и в доставке</h3>
+        <div id="listL"></div>
+      </div>
+
+    </div>
+
+    <div class="nav">
+      <div class="nav-item" id="nOrd" onclick="switchTab('tOrders','nOrd')">Заказы</div>
+      <div class="nav-item" id="nStk" onclick="switchTab('tStock','nStk')">Склад</div>
+      <div class="nav-item" id="nLog" onclick="switchTab('tLog','nLog')">Выдача</div>
+      <div class="nav-item" id="nPr" onclick="switchTab('tPr','nPr')">Прайсы</div>
+      <div class="nav-item" id="nRep" onclick="switchTab('tRep','nRep')">Админ</div>
+    </div>
+  </div>
+
+  <!-- ФОРМА ЗАКАЗА -->
+  <div id="orderM" class="modal"><div class="modal-in">
+    <div class="mhead"><h2>Новый заказ</h2><button class="close" onclick="closeModal('orderM')" aria-label="Закрыть">×</button></div>
+    <label class="lbl">Телефон</label>
+    <input type="tel" id="cPhone" placeholder="+79161234567 или 4567" oninput="onPhoneInput()" style="margin:0;">
+    <p id="cPhoneHint" class="muted small" style="margin:6px 4px 10px;"></p>
+    <div id="cResults"></div>
+    <label class="lbl">Имя клиента</label>
+    <input type="text" id="cName" oninput="syncSelfRec()">
+
+    <label class="lbl">Памятные даты (ДД.ММ)</label>
+    <div class="row">
+      <input id="cMem1" placeholder="15.05" maxlength="5" inputmode="decimal">
+      <input id="cMem2" placeholder="08.03" maxlength="5" inputmode="decimal">
+    </div>
+    <label class="lbl">Источник</label>
+    <select id="oSrc"></select>
+    <hr class="hr">
+    <label class="lbl">Дата и время выдачи</label>
+    <input type="date" id="oDay">
+    <div class="row">
+      <select id="oHour"></select>
+      <select id="oMin"><option value="">Минуты</option><option>00</option><option>15</option><option>30</option><option>45</option></select>
+    </div>
+    <label class="lbl">Как получит</label>
+    <div class="chips">
+      <div class="chip on" id="dvCour" onclick="setDlv('Курьер')">Доставка</div>
+      <div class="chip" id="dvPick" onclick="setDlv('Самовывоз')">Самовывоз</div>
+    </div>
+    <label class="opt"><input type="checkbox" id="selfRec" onchange="syncSelfRec()">Получатель — сам заказчик</label>
+    <label class="lbl">Получатель: имя и телефон</label>
+    <input id="oRec" placeholder="Анна, +79031112233">
+    <div id="addrBox">
+      <label class="lbl">Адрес доставки</label>
+      <textarea id="oAddr" rows="2" placeholder="Улица, дом, квартира, подъезд, этаж"></textarea>
+    </div>
+    <hr class="hr">
+    <label class="lbl">Состав</label>
+    <select id="oSel"></select>
+    <div class="row">
+      <input type="number" id="oQty" placeholder="Кол-во" inputmode="decimal" style="margin:0;">
+      <button class="btn-out" style="margin:0;" onclick="addCart()">+ Позиция</button>
+    </div>
+    <div id="cartL" style="margin-top:10px;"></div>
+    <div class="between" style="margin-top:10px;"><span class="muted">Сумма по РРЦ</span><b id="pSum">0</b></div>
+    <hr class="hr">
+    <div class="card" id="loyBox" style="display:none;">
+      <h3>Система лояльности</h3>
+      <div class="row">
+        <div><label class="lbl">Скидка</label><select id="oDisc" onchange="applyDisc()" style="margin:0;"></select></div>
+        <div><label class="lbl" id="bonusLbl">Списать бонусы</label><input type="number" id="oBonus" inputmode="decimal" oninput="updDebt()" style="margin:0;"></div>
+      </div>
+      <p class="muted small" style="margin:8px 0 0;">Скидка уменьшает цену продажи сразу. Бонусы не меняют цену — они уменьшают сумму, которую клиент платит деньгами. Обе строки считаются до итоговой оплаты.</p>
+    </div>
+    <label class="lbl">Цена продажи</label>
+    <input type="number" id="oFact" inputmode="decimal" oninput="S.factTouched=true;updDebt()">
+    <label class="lbl">Предоплата</label>
+    <input type="number" id="oPrep" inputmode="decimal" oninput="updDebt()">
+    <div id="oDebt"></div>
+    <label class="lbl">Способ предоплаты</label>
+    <select id="oPay"></select>
+    <hr class="hr">
+    <label class="lbl">Фото-пример</label>
+    <input type="file" id="oPhoto" accept="image/*">
+    <label class="lbl">Комментарий</label>
+    <textarea id="oCom" rows="2"></textarea>
+    <button class="btn-main" onclick="submitOrder()">Создать заказ</button>
+  </div></div>
+
+  <!-- ПРИХОД -->
+  <div id="incM" class="modal"><div class="modal-in">
+    <div class="mhead"><h2>Приход товара</h2><button class="close" onclick="closeModal('incM')" aria-label="Закрыть">×</button></div>
+    <label class="lbl">Номер накладной</label>
+    <input id="iInv" placeholder="по желанию">
+    <label class="lbl">Товар</label>
+    <select id="iSel" onchange="onIncSel()"></select>
+    <div id="iNewBox" style="display:none;">
+      <label class="lbl">Название нового товара</label>
+      <input id="iNewName">
+      <label class="lbl">Категория</label>
+      <select id="iNewCat"></select>
+      <label class="lbl">Своя цена продажи (для букетов, по желанию)</label>
+      <input id="iNewOwn" type="number" inputmode="decimal">
+    </div>
+    <div class="row">
+      <div><label class="lbl">Кол-во</label><input id="iQty" type="number" inputmode="decimal" oninput="incHint()"></div>
+      <div><label class="lbl">Цена закупки, шт.</label><input id="iPrice" type="number" inputmode="decimal" oninput="incHint()"></div>
+    </div>
+    <p id="iHint" class="muted small" style="margin:0 4px 10px;"></p>
+    <button class="btn-out" onclick="addIncLine()">+ Строка</button>
+    <div id="incL"></div>
+    <div class="between" style="margin:12px 0;"><span class="muted">Итого по накладной</span><b id="iTot">0</b></div>
+    <button class="btn-main" onclick="submitIncome()">Провести приход</button>
+  </div></div>
+
+  <!-- СПИСАНИЕ -->
+  <div id="woffM" class="modal"><div class="modal-in">
+    <div class="mhead"><h2>Списание</h2><button class="close" onclick="closeModal('woffM')" aria-label="Закрыть">×</button></div>
+    <label class="lbl">Товар</label>
+    <select id="wSel"></select>
+    <label class="lbl">Кол-во</label>
+    <input id="wQty" type="number" inputmode="decimal">
+    <label class="lbl">Причина</label>
+    <textarea id="wReason" rows="2" placeholder="Брак, увядание, сломан…"></textarea>
+    <label class="lbl">Фото (по желанию)</label>
+    <input type="file" id="wPhoto" accept="image/*">
+    <button class="btn-red" onclick="submitWoff()">Списать</button>
+  </div></div>
+
+  <!-- КАРТОЧКА ЗАКАЗА -->
+  <div id="cardM" class="modal"><div class="modal-in">
+    <div class="mhead"><h2 id="cdTitle"></h2><button class="close" onclick="closeModal('cardM')" aria-label="Закрыть">×</button></div>
+    <div id="cdBody"></div>
+  </div></div>
+</div>
+
+<!-- ИТОГИ ДНЯ -->
+<div id="dayM" class="modal"><div class="modal-in">
+  <div class="mhead"><h2>Итоги дня</h2><button class="close" onclick="closeModal('dayM')" aria-label="Закрыть">×</button></div>
+  <input type="date" id="dayDate" onchange="renderDay()">
+  <div id="dayBox"></div>
+</div></div>
+<!-- РАССЫЛКА -->
+<div id="bcM" class="modal"><div class="modal-in">
+  <div class="mhead"><h2>Рассылка</h2><button class="close" onclick="closeModal('bcM')" aria-label="Закрыть">×</button></div>
+  <div class="card">
+    <h3>Кому</h3>
+    <label class="lbl">Не заказывал дней (0 — не важно)</label><input id="bcNo" type="number" inputmode="numeric" value="0">
+    <label class="lbl">Памятная дата в ближайшие дней (0 — не важно)</label><input id="bcMem" type="number" inputmode="numeric" value="0">
+    <div class="row">
+      <div><label class="lbl">Бонусов от</label><input id="bcB" type="number" inputmode="decimal" value="0"></div>
+      <div><label class="lbl">Заказов от</label><input id="bcC" type="number" inputmode="numeric" value="0"></div>
+    </div>
+    <label class="lbl">Сумма покупок от</label><input id="bcT" type="number" inputmode="decimal" value="0">
+    <button class="btn-main" onclick="bcFind()">Подобрать клиентов</button>
+  </div>
+  <div class="card">
+    <h3>Что отправляем</h3>
+    <label class="lbl">Шаблон</label><select id="bcTpl" onchange="bcText()"></select>
+    <textarea id="bcTxt" rows="3"></textarea>
+    <p class="muted small">Каждому подставится своё: {клиент}, {бонусы}, {сумма}, {магазин}.</p>
+    <div class="btns"><button class="btn-soft" onclick="bcCopyText()">Копировать текст</button><button class="btn-soft" onclick="bcCopyPhones()">Копировать номера</button></div>
+  </div>
+  <div id="bcList"></div>
+</div></div>
+<!-- ЗАКАЗ ИЗ АРХИВА -->
+<div id="arM" class="modal"><div class="modal-in">
+  <div class="mhead"><h2 id="arTitle"></h2><button class="close" onclick="closeModal('arM')" aria-label="Закрыть">×</button></div>
+  <div id="arBody"></div>
+</div></div>
+<div id="printArea"></div>
+<!-- АДМИН: РАЗДЕЛ -->
+<div id="admM" class="modal"><div class="modal-in">
+  <div class="mhead"><h2 id="admTitle"></h2><button class="close" onclick="closeModal('admM')" aria-label="Закрыть">×</button></div>
+  <div id="admBody"></div>
+</div></div>
+<!-- КЛИЕНТЫ -->
+<div id="clM" class="modal"><div class="modal-in">
+  <div class="mhead"><h2>Клиенты</h2><button class="close" onclick="closeModal('clM')" aria-label="Закрыть">×</button></div>
+  <input type="search" id="clQ" placeholder="Имя или цифры телефона" oninput="clSearchSoon()">
+  <div id="clList"></div>
+</div></div>
+<div id="ccM" class="modal"><div class="modal-in">
+  <div class="mhead"><h2 id="ccTitle"></h2><button class="close" onclick="closeModal('ccM')" aria-label="Закрыть">×</button></div>
+  <div id="ccBody"></div>
+</div></div>
+<!-- ВИТРИНА -->
+<div id="vitM" class="modal"><div class="modal-in">
+  <div class="mhead"><h2>Витрина</h2><button class="close" onclick="closeModal('vitM')" aria-label="Закрыть">×</button></div>
+  <button class="btn-main" id="bVitNew" onclick="openVitBuild()">+ Собрать букет на витрину</button>
+  <div id="listV"></div>
+</div></div>
+<!-- БОНУСЫ КЛИЕНТА (админ) -->
+<div id="baM" class="modal"><div class="modal-in">
+  <div class="mhead"><h2>Бонусы клиента</h2><button class="close" onclick="closeModal('baM')" aria-label="Закрыть">×</button></div>
+  <label class="lbl">Телефон или 4 последние цифры</label>
+  <input type="tel" id="baPhone" placeholder="+79161234567 или 4567" oninput="baInput()">
+  <div id="baRes"></div>
+  <div id="baBox" style="display:none;">
+    <label class="lbl">Сколько: + начислить, − снять</label><input id="baSum" type="number" inputmode="decimal" placeholder="например 200 или -150">
+    <label class="lbl">Причина</label><select id="baReason"></select>
+    <label class="lbl">Комментарий (по желанию)</label><input id="baNote">
+    <button class="btn-main" onclick="baSave()">Сохранить</button>
+  </div>
+</div></div>
+<!-- ИЗМЕНИТЬ СОСТАВ -->
+<div id="editM" class="modal"><div class="modal-in">
+  <div class="mhead"><h2 id="edTitle"></h2><button class="close" onclick="closeModal('editM')" aria-label="Закрыть">×</button></div>
+  <div id="edLines"></div>
+  <div class="row"><select id="edSel" style="margin:0;"></select><input id="edQty" type="number" inputmode="decimal" placeholder="Кол-во" style="margin:0;flex:0 0 90px;"></div>
+  <button class="btn-out" style="margin-top:10px;" onclick="edAdd()">+ позиция</button>
+  <div class="between" style="margin:8px 0;"><span class="muted">Сумма по РРЦ</span><b id="edSum"></b></div>
+  <label class="lbl" id="edOldLbl"></label>
+  <div class="row"><input id="edPrice" type="number" inputmode="decimal" placeholder="Новая цена или пусто — оставить прежнюю" style="margin:0;"><button class="btn-soft" style="margin:0;flex:0 0 120px;" onclick="edOldPrice()">Прежняя</button></div>
+  <label class="lbl" style="margin-top:12px;">Причина изменений (по желанию)</label>
+  <input id="edReason" placeholder="Например: плохое качество роз 40 см">
+  <button class="btn-main" onclick="edSave()">Сохранить состав</button>
+</div></div>
+<!-- ЗАКУПКА -->
+<div id="buyM" class="modal"><div class="modal-in">
+  <div class="mhead"><h2>Закупка</h2><button class="close" onclick="closeModal('buyM')" aria-label="Закрыть">×</button></div>
+  <p class="muted small">Купить = постоянный минимум + в заказах − в наличии. Минимум меняется кнопкой ✎ у товара на складе или в колонке «Постоянный минимум».</p>
+  <div id="buyList"></div>
+  <button class="btn-main" onclick="buyCopy()">Скопировать список</button>
+  <button class="btn-out" onclick="buyToIncome()">Оформить приход по списку</button>
+  <textarea id="buyText" rows="6" style="display:none;"></textarea>
+</div></div>
+<!-- ИНВЕНТАРИЗАЦИЯ -->
+<div id="invM" class="modal"><div class="modal-in">
+  <div class="mhead"><h2>Инвентаризация</h2><button class="close" onclick="closeModal('invM')" aria-label="Закрыть">×</button></div>
+  <p class="muted small">Впишите, сколько посчитали. Пустое поле — позицию не считали, она не изменится.</p>
+  <input type="search" id="invQ" placeholder="Поиск товара" oninput="renderInv()">
+  <div id="invList"></div>
+  <button class="btn-main" onclick="invSave()">Провести инвентаризацию</button>
+</div></div>
+<!-- ВИТРИНА: СОБРАТЬ -->
+<div id="vbM" class="modal"><div class="modal-in">
+  <div class="mhead"><h2>Букет на витрину</h2><button class="close" onclick="closeModal('vbM')" aria-label="Закрыть">×</button></div>
+  <label class="lbl">Название</label><input id="vbName" placeholder="Например: Весна">
+  <label class="lbl">Состав одного букета</label>
+  <div class="row"><select id="vbSel" style="margin:0;"></select><input id="vbQty" type="number" inputmode="decimal" placeholder="Кол-во" style="margin:0;flex:0 0 90px;"></div>
+  <button class="btn-out" style="margin-top:10px;" onclick="vbAdd()">+ товар</button>
+  <div id="vbLines"></div>
+  <label class="lbl" style="margin-top:10px;">Сколько одинаковых букетов</label><input id="vbCount" type="number" inputmode="numeric" value="1" oninput="vbRender()">
+  <div id="vbInfo" class="muted small" style="margin-bottom:8px;"></div>
+  <label class="lbl">Цена продажи одного (пусто — по РРЦ состава)</label><input id="vbPrice" type="number" inputmode="decimal">
+  <button class="btn-main" onclick="vbSave()">Собрать на витрину</button>
+</div></div>
+<!-- ВИТРИНА: РАЗОБРАТЬ -->
+<div id="vdM" class="modal"><div class="modal-in">
+  <div class="mhead"><h2 id="vdTitle"></h2><button class="close" onclick="closeModal('vdM')" aria-label="Закрыть">×</button></div>
+  <p class="muted small">В списке — то, что СПИШЕТСЯ. Уберите ✕ то, что возвращается на склад целым (или уменьшите количество).</p>
+  <div id="vdLines"></div>
+  <label class="lbl">Причина</label><input id="vdReason" placeholder="Завял, не продан…">
+  <button class="btn-red" onclick="vdSave()">Разобрать один букет</button>
+</div></div>
+<!-- ВИТРИНА: ПРОДАТЬ -->
+<div id="vsM" class="modal"><div class="modal-in">
+  <div class="mhead"><h2 id="vsTitle"></h2><button class="close" onclick="closeModal('vsM')" aria-label="Закрыть">×</button></div>
+  <label class="lbl">Телефон клиента (по желанию)</label><input type="tel" id="vsPhone" placeholder="+79161234567">
+  <label class="lbl">Имя (по желанию)</label><input id="vsName">
+  <label class="lbl" id="vsPriceLbl">Цена продажи</label><input id="vsPrice" type="number" inputmode="decimal">
+  <button class="btn-main" onclick="vsSave()">Принять оплату и выдать</button>
+</div></div>
+
+<!-- КАССА -->
+<div id="cashM" class="modal"><div class="modal-in">
+  <div class="mhead"><h2>Касса</h2><button class="close" onclick="closeModal('cashM')" aria-label="Закрыть">×</button></div>
+  <div id="cashTop"></div>
+  <div class="btns">
+    <button class="btn-main" onclick="cashOp('Внесение')">+ Внести</button>
+    <button class="btn-out" onclick="cashOp('Изъятие')">− Изъять</button>
+    <button class="btn-soft" onclick="cashRecountUi()">Пересчёт кассы</button>
+  </div>
+  <div class="chips" id="cashChips">
+    <div class="chip on" onclick="cashPeriod(0,this)">Сегодня</div>
+    <div class="chip" onclick="cashPeriod(1,this)">Вчера</div>
+    <div class="chip" onclick="cashPeriod(7,this)">7 дней</div>
+    <div class="chip" onclick="cashPeriod(30,this)">30 дней</div>
+  </div>
+  <div id="cashList"></div>
+</div></div>
+<!-- ОДИН ОТЧЁТ -->
+<div id="rvM" class="modal"><div class="modal-in">
+  <div class="mhead"><h2 id="rvTitle"></h2><button class="close" onclick="closeModal('rvM')" aria-label="Закрыть">×</button></div>
+  <div id="rvFilters"></div>
+  <div id="rvBox"></div>
+</div></div>
+
+<div id="dlg"><div class="dlg-box">
+  <h3 id="dlgT"></h3>
+  <div id="dlgB"></div>
+  <p id="dlgE" class="err"></p>
+  <button id="dlgOk" class="btn-main" onclick="dlgConfirm()">OK</button>
+  <button id="dlgNo" class="btn-soft" onclick="closeDlg()">Назад</button>
+</div></div>
+<div id="loader"><div class="ldbox"><div class="spin"></div><div><div class="ldtxt" id="loaderT">Загрузка…</div><div class="ldtip" id="loaderTip"></div></div></div></div>
+<div id="toast"></div>
+<div id="qBar" role="status" aria-live="polite"></div>
+
+<script>
+const APP_VERSION = "v1.0 · 22.09.2026";
+/** Ссылка развёртывания Apps Script (…/exec). Пусто — приложение работает внутри Google как раньше. */
+const API_URL = "";
+const R = { ADMIN: "Администратор", MANAGER: "Менеджер", FLORIST: "Флорист", LOGIST: "Логист" };
+const ST = { WAIT: "Ожидает сборки", WORK: "В процессе сборки", DONE: "Собран", PICKUP_WAIT: "Ожидает самовывоза",
+  COURIER: "У курьера", PICKED: "Выдан самовывозом", RECEIVED: "Получен покупателем", REFUSED: "Отказ", CANCELED: "Отменен" };
+const TERMINAL = [ST.PICKED, ST.RECEIVED, ST.REFUSED, ST.CANCELED];
+const AFTER_ASSEMBLY = [ST.DONE, ST.PICKUP_WAIT, ST.COURIER];
+const FATE_RETURN = "Вернуть на склад", FATE_UTIL = "Списать (утилизация)";
+const TOKEN_KEY = "saycrm_token";
+const VIT = "Витрина";
+
+const tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
+try { if (tg) { tg.ready(); tg.expand(); } } catch (e) {}
+
+const S = { token: "", user: null, db: { stock: [], orders: [], lists: {}, cfg: {} }, filter: "all", date: "", q: "",
+  cart: [], factTouched: false, reqOrder: null, inc: [], reqInc: null, reqWoff: null, busy: false, found: [] };
+
+// ---------- утилиты ----------
+const byId = id => document.getElementById(id);
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+function num(v) { const n = parseFloat(String(v == null ? "" : v).replace(/\s/g, "").replace(",", ".")); return isFinite(n) ? n : 0; }
+function fmt(v) { return (Math.round(num(v) * 100) / 100).toLocaleString("ru-RU"); }
+function money(v) { return fmt(v) + " " + (S.db.cfg.currency || "₽"); }
+function uuid() { return "r" + Date.now().toString(36) + Math.random().toString(36).slice(2, 10); }
+function cleanErr(m) { return String(m || "Неизвестная ошибка").replace(/^(Error|Exception|Ошибка):\s*/i, ""); }
+/** Есть ли у сотрудника галочка (сервер всё равно проверит). */
+function can(cap) { return !!(S.user && S.user.caps && S.user.caps[cap]); }
+function haptic(t) { try { if (!tg || !tg.HapticFeedback) return; if (t === "error" || t === "success") tg.HapticFeedback.notificationOccurred(t); else tg.HapticFeedback.impactOccurred("light"); } catch (e) {} }
+function isoToRu(iso) { const p = String(iso || "").split("-"); return p.length === 3 ? p[2] + "." + p[1] + "." + p[0] : ""; }
+function ruToDate(s) { const p = String(s || "").split("."); return new Date(+p[2], +p[1] - 1, +p[0]); }
+function dateKey(d) { return d.getFullYear() + ("0" + (d.getMonth() + 1)).slice(-2) + ("0" + d.getDate()).slice(-2) + "0000"; }
+function lsGet(k) { try { return window.localStorage.getItem(k) || ""; } catch (e) { return ""; } }
+function lsSet(k, v) { try { if (v) window.localStorage.setItem(k, v); else window.localStorage.removeItem(k); } catch (e) {} }
+
+/** Та же нормализация телефона, что на сервере. */
+function normPhone(raw) {
+  let s = String(raw || "").trim(); if (!s) return "";
+  const plus = s.charAt(0) === "+";
+  let d = s.replace(/\D/g, ""); if (!d) return "";
+  if (!plus) {
+    if (d.indexOf("00") === 0) d = d.slice(2);
+    else if (d.length === 11 && d.charAt(0) === "8" && d.charAt(1) === "0") d = "375" + d.slice(2);
+    else if (d.length === 11 && d.charAt(0) === "8") d = "7" + d.slice(1);
+    else if (d.length === 10 && d.charAt(0) === "9") d = "7" + d;
+  }
+  return "+" + d;
+}
+function phoneOk(p) { const n = p.replace(/\D/g, "").length; return n >= 10 && n <= 15; }
+function dmOk(s) { if (!s) return true; const m = /^(\d{1,2})[.\/-](\d{1,2})$/.exec(s); return !!m && +m[1] >= 1 && +m[1] <= 31 && +m[2] >= 1 && +m[2] <= 12; }
+
+// ---------- лоадер, окна, уведомления ----------
+function showLoader(t) {
+  byId("loaderT").textContent = t || "Загрузка…";
+  const tips = (S.db.lists && S.db.lists.tips) || [];
+  byId("loaderTip").textContent = tips.length ? "💡 " + tips[Math.floor(Math.random() * tips.length)] : "";
+  byId("loader").classList.add("on");
+}
+function hideLoader() { byId("loader").classList.remove("on"); }
+let toastTimer = null;
+function toast(t) { const el = byId("toast"); el.textContent = t; el.style.display = "block"; clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.style.display = "none"; }, 2600); }
+
+let dlgHandler = null;
+/** o: {title, html, ok, cancel (false — без кнопки), danger, onOk(root) → false (не закрывать) | функция (выполнить после закрытия)} */
+function dialog(o) {
+  byId("dlgT").textContent = o.title || "";
+  byId("dlgB").innerHTML = o.html || "";
+  byId("dlgE").textContent = "";
+  const ok = byId("dlgOk"), no = byId("dlgNo");
+  ok.textContent = o.ok || "OK";
+  ok.className = o.danger ? "btn-red" : "btn-main";
+  no.style.display = o.cancel === false ? "none" : "block";
+  no.textContent = o.cancel || "Назад";
+  no.onclick = () => { closeDlg(); if (o.onCancel) o.onCancel(); };
+  dlgHandler = o.onOk || null;
+  byId("dlg").classList.add("on");
+}
+function dlgConfirm() {
+  const fn = dlgHandler;
+  let after = null;
+  if (fn) { const r = fn(byId("dlgB")); if (r === false) return; if (typeof r === "function") after = r; }
+  closeDlg();
+  if (after) after();
+}
+function closeDlg() { byId("dlg").classList.remove("on"); dlgHandler = null; }
+function dlgError(t) { byId("dlgE").textContent = t; haptic("error"); }
+function showMsg(text, isErr, after) {
+  if (isErr) haptic("error");
+  dialog({ title: isErr ? "Не получилось" : "Готово", html: '<p style="white-space:pre-wrap;">' + esc(text) + "</p>", ok: "Понятно", cancel: false, onOk: () => after || null });
+}
+function askConfirm(text, onYes, okText, danger) {
+  dialog({ title: "Подтвердите действие", html: '<p style="white-space:pre-wrap;">' + esc(text) + "</p>", ok: okText || "Да", danger: !!danger, onOk: () => onYes });
+}
+
+/**
+ * R4: единственная дорога к серверу — экран заблокирован, лоадер, оба обработчика.
+ * onFail(message) может вернуть true, чтобы не показывать стандартное окно ошибки.
+ */
+/** Внутри Google — google.script.run; на своём хостинге — запрос на /exec. */
+const INSIDE_GAS = typeof google !== "undefined" && google.script && google.script.run;
+function srv(fn, args, ok, fail) {
+  if (INSIDE_GAS) { const r = google.script.run.withSuccessHandler(ok).withFailureHandler(fail); r[fn].apply(r, args); return; }
+  fetch(API_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ fn: fn, args: args }) })
+    .then(r => r.json())
+    .then(r => { if (r && r.ok) ok(r.data); else fail({ message: (r && r.error) || "Сервер не ответил" }); })
+    .catch(() => jsonp(fn, args, ok, fail));   // запасной путь, если браузер запретил запрос
+}
+/** Запасной путь: GET со скриптом-ответом (без ограничений браузера на чужие домены). */
+function jsonp(fn, args, ok, fail) {
+  const cb = "cb" + Date.now().toString(36) + Math.floor(Math.random() * 1e6);
+  const t = setTimeout(() => { delete window[cb]; sc.remove(); fail({ message: "Сервер не ответил" }); }, 60000);
+  window[cb] = r => { clearTimeout(t); delete window[cb]; sc.remove(); if (r && r.ok) ok(r.data); else fail({ message: (r && r.error) || "Ошибка" }); };
+  const sc = document.createElement("script");
+  sc.src = API_URL + "?callback=" + cb + "&fn=" + encodeURIComponent(fn) + "&args=" + encodeURIComponent(JSON.stringify(args));
+  sc.onerror = () => { clearTimeout(t); delete window[cb]; sc.remove(); fail({ message: "Нет связи с сервером" }); };
+  document.body.appendChild(sc);
+}
+function call(fn, args, ok, text, onFail) {
+  if (S.busy) return;
+  S.busy = true;
+  showLoader(text);
+  srv(fn, args,
+    r => { S.busy = false; hideLoader(); try { ok(r); } catch (e) { showMsg("Ошибка интерфейса: " + e.message, true); } },
+    err => {
+      S.busy = false; hideLoader();
+      const m = cleanErr(err && err.message ? err.message : err);
+      if (onFail && onFail(m) === true) return;
+      if (m.indexOf("SESSION_EXPIRED") > -1) { showLogin(); showMsg(m.replace(/SESSION_EXPIRED:\s*/, "Сессия закончилась: "), true); return; }
+      showMsg(m, true);
+    });
+}
+
+/** Сжатие фото до 1600 px (JPEG 80%). Нераспознанный формат (HEIC) уходит как есть. */
+function readPhoto(file, ok, fail) {
+  if (file.size > 15 * 1024 * 1024) { fail(); showMsg("Файл больше 15 МБ — выберите фото поменьше.", true); return; }
+  const fr = new FileReader();
+  fr.onerror = () => { fail(); showMsg("Не удалось прочитать файл.", true); };
+  fr.onload = e => {
+    const src = e.target.result;
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const k = Math.min(1, 1600 / Math.max(img.width, img.height));
+        const c = document.createElement("canvas");
+        c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        ok({ b64: c.toDataURL("image/jpeg", 0.8).split(",")[1], mime: "image/jpeg" });
+      } catch (er) { ok({ b64: src.split(",")[1], mime: file.type || "image/jpeg" }); }
+    };
+    img.onerror = () => ok({ b64: src.split(",")[1], mime: file.type || "image/jpeg" });
+    img.src = src;
+  };
+  fr.readAsDataURL(file);
+}
+/** Прочитать и сжать фото из поля (если выбрано) — внутри фоновой задачи, без окна загрузки. */
+function photoFile(inputId) { const inp = inputId ? byId(inputId) : null; return inp && inp.files && inp.files[0] ? inp.files[0] : null; }
+function photoPrep(file, payload, key) {
+  return next => { if (!file) { next(); return; } readPhoto(file, ph => { payload[key] = ph; next(); }, () => next()); };
+}
+
+// ---------- фоновая очередь: действия уходят на сервер по одному, экран не блокируется ----------
+const Q = { jobs: [], busy: false };
+/** job: {label, fn, args, ok(r), fail(msg) → true (сам показал), prep(next)} */
+function enqueue(job) { Q.jobs.push(job); updQ(); runQ(); }
+function runQ() {
+  if (Q.busy || !Q.jobs.length) return;
+  const j = Q.jobs[0];
+  Q.busy = true; updQ();
+  const done = () => { Q.jobs.shift(); Q.busy = false; updQ(); runQ(); };
+  const exec = () => {
+    srv(j.fn, j.args,
+      r => { try { if (j.ok) j.ok(r); } catch (e) { showMsg("Ошибка интерфейса: " + e.message, true); } done(); },
+      err => {
+        const m = cleanErr(err && err.message ? err.message : err);
+        if (m.indexOf("SESSION_EXPIRED") > -1) { Q.jobs = []; Q.busy = false; updQ(); showLogin(); showMsg("Сессия закончилась — войдите и повторите: " + j.label, true); return; }
+        if (!(j.fail && j.fail(m) === true)) showMsg(j.label + ": " + m, true);
+        done();
+      });
+  };
+  if (j.prep) j.prep(exec); else exec();
+}
+function updQ() {
+  const el = byId("qBar"), n = Q.jobs.length;
+  el.style.display = n ? "flex" : "none";
+  if (n) el.innerHTML = '<span class="qspin"></span>' + esc(Q.jobs[0].label) + (n > 1 ? " · ещё " + (n - 1) : "");
+}
+window.addEventListener("beforeunload", e => { if (Q.jobs.length) { e.preventDefault(); e.returnValue = ""; } });
+/** Если открыта карточка этого заказа — перерисовать её свежими данными. */
+function refreshCard(id) { if (byId("cardM").classList.contains("on") && S.cardId === id) openCard(id); }
+
+// ---------- вход / выход ----------
+byId("verLbl").textContent = "SAYCRM " + APP_VERSION;
+function diagText() {
+  let top = "нет"; try { top = window.self !== window.top ? "да" : "нет"; } catch (e) { top = "да"; }
+  let ls = "нет"; try { window.localStorage.setItem("t", "1"); window.localStorage.removeItem("t"); ls = "да"; } catch (e) {}
+  return ["Версия: " + APP_VERSION, "Telegram.WebApp: " + (tg ? "есть" : "нет"), "Платформа: " + (tg ? (tg.platform || "—") : "—"),
+    "initData: " + (tg ? (tg.initData || "").length : 0) + " симв.", "Внутри фрейма: " + top,
+    "Запоминание входа доступно: " + ls, "Экран: " + window.innerWidth + "×" + window.innerHeight].join("\n");
+}
+let verTaps = 0, verTimer = null;
+/** Диагностика скрыта от сотрудников: три касания по надписи с версией. */
+function tapVer() {
+  verTaps++; clearTimeout(verTimer); verTimer = setTimeout(() => { verTaps = 0; }, 1200);
+  if (verTaps >= 3) { verTaps = 0; const d = byId("diag"); d.textContent = diagText(); d.style.display = d.style.display === "block" ? "none" : "block"; }
+}
+/** Тема: светлая или тёмная, запоминается на устройстве. */
+let themeNow = "";
+function theme() { return themeNow || lsGet("saycrm_theme") || "light"; }
+function applyTheme() { document.documentElement.setAttribute("data-theme", theme() === "dark" ? "dark" : "light"); }
+function toggleTheme() {   // если хранилище недоступно (бывает внутри Google), тема держится до перезагрузки
+  themeNow = theme() === "dark" ? "light" : "dark";
+  lsSet("saycrm_theme", themeNow);
+  applyTheme();
+  toast(themeNow === "dark" ? "Тёмная тема" : "Светлая тема");
+}
+applyTheme();
+
+function login() {
+  const pin = byId("pin").value.trim();
+  if (!pin) { showMsg("Введите ПИН-код.", true); return; }
+  let dev = lsGet("saycrm_dev"); if (!dev) { dev = uuid(); lsSet("saycrm_dev", dev); }
+  call("authUser", [pin, dev], r => {
+    S.token = r.token; S.user = { name: r.name, role: r.role, caps: r.caps || {} };
+    lsSet(TOKEN_KEY, r.token);
+    byId("pin").value = "";
+    if (r.version !== APP_VERSION) toast("Сервер " + r.version + ", экран " + APP_VERSION + " — выпустите новую версию развёртывания");
+    haptic("success");
+    enterApp();
+    loadDb();
+  }, "Проверяем ПИН…");
+}
+/** Показать экран входа без перезагрузки страницы (перезагрузка внутри Google даёт белый экран). */
+function showLogin() {
+  lsSet(TOKEN_KEY, "");
+  S.token = ""; S.user = null; S.db = { stock: [], orders: [], lists: {}, cfg: {} };
+  document.querySelectorAll(".modal").forEach(m => m.classList.remove("on"));
+  closeDlg();
+  byId("mainSc").style.display = "none";
+  byId("authSc").classList.add("active");
+}
+function logoutUi() {
+  if (Q.jobs.length) { showMsg("Ещё сохраняются операции (" + Q.jobs.length + "). Подождите пару секунд и выйдите.", true); return; }
+  askConfirm("Выйти из приложения?", () => {
+    const t = S.token;
+    showLogin();
+    srv("logout", [t], () => {}, () => {});   // тихо: вход уже закрыт на экране
+  }, "Выйти");
+}
+function enterApp() {
+  byId("authSc").classList.remove("active");
+  byId("mainSc").style.display = "block";
+  applyCaps();
+  if (can("issue") && !can("order") && !can("build")) switchTab("tLog", "nLog"); else switchTab("tOrders", "nOrd");
+}
+/** Показать вкладки и кнопки по текущим галочкам (вызывается при каждом обновлении данных). */
+function applyCaps() {
+  if (!S.user) return;
+  byId("wName").textContent = S.user.name;
+  byId("wRole").textContent = S.user.role;
+  byId("nStk").style.display = can("stock") ? "block" : "none";
+  byId("nLog").style.display = can("issue") ? "block" : "none";
+  byId("bCash").style.display = can("cashbox") ? "block" : "none";
+  const admin = S.user.role === R.ADMIN;
+  byId("nRep").style.display = can("reports") || admin ? "block" : "none";
+  byId("repBlock").style.display = can("reports") ? "block" : "none";
+  byId("admBlock").style.display = admin ? "block" : "none";
+  renderTiles();
+  byId("ordBtns").innerHTML = btnGroup([can("order") && btnH("+ Новый заказ", "openOrderForm()", "btn-main"),
+    (can("vitrine") || can("order")) && btnH("Витрина", "openVit()", "btn-out"), (can("order") || can("reports")) && btnH("Клиенты", "openClients()", "btn-soft"),
+    can("broadcast") && btnH("Рассылка", "openBroadcast()", "btn-soft")]);
+  byId("stkBtns").innerHTML = btnGroup([can("income") && btnH("+ Приход", "openIncome()", "btn-main"), can("woff") && btnH("Списание", "openWoff()", "btn-out"),
+    can("purchase") && btnH("Закупка", "openPurchase()", "btn-soft"), can("inv") && btnH("Инвентаризация", "openInventory()", "btn-soft"),
+    can("cost") && btnH("Ценники на печать", "printTags()", "btn-soft")]);
+  byId("nPr").style.display = can("price") || can("order") ? "block" : "none";
+  byId("bVitNew").style.display = can("vitrine") ? "block" : "none";
+  // открытая вкладка стала недоступна — перейти на «Заказы»
+  const cur = document.querySelector(".nav-item.on");
+  if (cur && cur.style.display === "none") switchTab("tOrders", "nOrd");
+}
+/** После перезагрузки страницы: если сессия жива — входим без ПИН. */
+function autoLogin() {
+  const t = lsGet(TOKEN_KEY);
+  if (!t) return;
+  S.token = t;
+  call("getInitialData", [t], d => {
+    S.user = d.user; S.db = d;
+    enterApp(); renderAll();
+  }, "Входим…", m => { if (m.indexOf("SESSION_EXPIRED") > -1) { showLogin(); return true; } return false; });
+}
+function switchTab(tab, nav) {
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("on"));
+  document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("on"));
+  byId(tab).classList.add("on"); byId(nav).classList.add("on");
+  haptic();
+}
+function openModal(id) { byId(id).classList.add("on"); byId(id).scrollTop = 0; }
+function closeModal(id) { byId(id).classList.remove("on"); }
+
+// ---------- данные ----------
+function loadDb(after) {
+  call("getInitialData", [S.token], d => {
+    S.db = d; S.user = d.user;
+    renderAll();
+    if (after) after();
+  }, "Загружаем данные…");
+}
+/** Свежие данные пришли в ответе действия — показываем без второго запроса. */
+function applyData(r, after) {
+  if (r && r.data) { S.db = r.data; S.user = r.data.user; renderAll(); if (after) after(); }
+  else loadDb(after);
+}
+function renderAll() {
+  applyCaps();
+  renderOrders(); renderStock(); renderLog(); renderVit(); renderPrices();
+  if (byId("cashM").classList.contains("on")) renderCash();
+  if (byId("dayM").classList.contains("on")) renderDay();
+  // отчёт не перезапрашиваем при обновлении данных: он считается на сервере по кнопкам периода
+}
+function sumBy(list, key, val) { const m = {}; list.forEach(x => { m[x[key]] = (m[x[key]] || 0) + val(x); }); return m; }
+function payLines(pays) {
+  const m = sumBy(pays, "method", p => p.sum), keys = Object.keys(m);
+  return keys.length ? keys.map(k => kv(k, money(m[k]))).join("") + kv("Всего", "<b>" + money(pays.reduce((a, p) => a + p.sum, 0)) + "</b>") : '<p class="muted small">Оплат нет.</p>';
+}
+/** Дата «ДД.ММ.ГГГГ» ↔ значение поля даты. */
+function ruToIso(ru) { const p = String(ru || "").split("."); return p.length === 3 ? p[2] + "-" + p[1] + "-" + p[0] : ""; }
+function dk(ru) { const p = String(ru || "").slice(0, 10).split("."); return p.length === 3 ? p[2] + p[1] + p[0] : ""; }
+/** Итоги сотрудника за день: создал, собрал, выдал, принял денег по способам. */
+function staffStats(name, from, to) {
+  const inR = d => { const k = dk(d); return k && k >= from && k <= to; };
+  const lost = o => o.status === ST.CANCELED || o.status === ST.REFUSED;
+  const O = S.db.orders;
+  const made = O.filter(o => o.creator === name && inR(o.created) && !lost(o));
+  return { made: made, built: O.filter(o => o.assembler === name && inR(o.tDone)), given: O.filter(o => o.logist === name && inR(o.tOut)),
+    pays: (S.db.payments || []).filter(p => p.user === name && inR(p.time)) };
+}
+function openDay() {
+  byId("dayDate").value = ruToIso(S.db.cfg.today);
+  renderDay(); openModal("dayM");
+}
+function renderDay() {
+  const day = dk(isoToRu(byId("dayDate").value)) || dk(S.db.cfg.today);
+  const st = staffStats(S.user.name, day, day);
+  byId("dayBox").innerHTML = '<div class="card"><h3>' + esc(S.user.name) + "</h3>" +
+    kv("Создал заказов", st.made.length + " на " + money(st.made.reduce((a, o) => a + o.fact, 0))) + kv("Собрал", String(st.built.length)) + kv("Выдал", String(st.given.length)) +
+    "</div>" + '<div class="card"><h3>Принял денег</h3>' + payLines(st.pays) + "</div>";
+}
+function findOrder(id) { return S.db.orders.find(o => o.id === id); }
+function stClass(s) { return TERMINAL.indexOf(s) > -1 ? "status off" : (AFTER_ASSEMBLY.indexOf(s) > -1 ? "status done" : "status"); }
+function stockOf(name) { return S.db.stock.find(i => i.name === name); }
+/** Чего физически не хватает, чтобы собрать заказ прямо сейчас. */
+function orderShortage(o) {
+  if (o.status !== ST.WAIT && o.status !== ST.WORK) return [];
+  return o.items.map(it => { const s = stockOf(it.name); return s && s.phys < it.qty ? { name: it.name, have: s.phys, need: it.qty } : null; }).filter(x => x);
+}
+
+// ---------- заказы ----------
+function setFilter(t) {
+  S.filter = t; S.date = "";
+  ["fAll", "fToday", "fTom"].forEach(id => byId(id).classList.remove("on"));
+  byId({ all: "fAll", today: "fToday", tomorrow: "fTom" }[t]).classList.add("on");
+  byId("dp").value = ""; byId("dp").classList.remove("on");
+  S.archFound = []; S.archKey = "";
+  renderOrders();
+}
+function onPickDate(v) {
+  if (!v) { setFilter("all"); return; }
+  S.filter = "date"; S.date = isoToRu(v);
+  ["fAll", "fToday", "fTom"].forEach(id => byId(id).classList.remove("on"));
+  byId("dp").classList.add("on");
+  renderOrders(); findEverywhere();
+}
+function orderList() {
+  const cfg = S.db.cfg, u = S.user;
+  let list = S.db.orders.slice();
+  if (u.role !== R.ADMIN && can("build")) list = list.filter(o => !(o.status === ST.WORK && o.assembler !== "-" && o.assembler !== u.name));
+  if (S.filter === "today") list = list.filter(o => o.date.slice(0, 10) === cfg.today);
+  else if (S.filter === "tomorrow") list = list.filter(o => o.date.slice(0, 10) === cfg.tomorrow);
+  else if (S.filter === "date" && S.date) list = list.filter(o => o.date.slice(0, 10) === S.date);
+  const q = (S.q || "").trim().toLowerCase(), qd = q.replace(/\D/g, "");
+  if (q) list = list.filter(o => o.id.toLowerCase().indexOf(q) > -1 || o.client.toLowerCase().indexOf(q) > -1 ||
+    o.recipient.toLowerCase().indexOf(q) > -1 || (qd.length >= 3 && o.phone.replace(/\D/g, "").indexOf(qd) > -1));
+  const act = o => TERMINAL.indexOf(o.status) < 0;
+  list.sort((a, b) => {
+    const x = act(a), y = act(b);
+    if (x !== y) return x ? -1 : 1;
+    return x ? a.dKey.localeCompare(b.dKey) : b.dKey.localeCompare(a.dKey);
+  });
+  return list;
+}
+function debtOf(o) { return (o.status === ST.CANCELED || o.status === ST.REFUSED) ? 0 : num(o.debt); }
+function orderCard(o) {
+  const closed = TERMINAL.indexOf(o.status) > -1;
+  const hot = !closed && o.date.slice(0, 10) === S.db.cfg.today;
+  const debt = debtOf(o);
+  const who = o.status === ST.WORK && o.assembler !== "-" ? '<div class="muted small">Собирает: ' + esc(o.assembler) + "</div>" : "";
+  const short = orderShortage(o).length ? '<div class="small" style="color:#8a5a00;margin-top:4px;">⚠ ждёт поставки</div>' : "";
+  return '<div class="card tap' + (hot ? " hot" : "") + (closed ? " closed" : "") + '" onclick="openCard(\'' + esc(o.id) + '\')">' +
+    '<div class="between" style="margin-bottom:6px;"><b>#' + esc(o.id) + '</b><span class="' + stClass(o.status) + '">' + esc(o.status) + "</span></div>" +
+    '<div class="between"><span>' + esc(o.client) + "</span><b>" + money(o.fact) + "</b></div>" +
+    '<div class="between" style="margin-top:4px;"><span class="muted small">' + esc(o.date) + "</span>" + (debt > 0 ? '<span class="pay">к доплате ' + money(debt) + "</span>" : "") + "</div>" +
+    who + short + "</div>";
+}
+function renderOrders() {
+  if (!S.user) return;
+  const l = orderList();
+  const arch = (S.archFound || []).filter(o => !l.some(x => x.id === o.id));
+  byId("listO").innerHTML = (l.length ? l.map(orderCard).join("") : "") +
+    (arch.length ? '<p class="muted small" style="margin:10px 0 4px;">Из архива (' + arch.length + "):</p>" + arch.map((o, i) => '<div class="card tap closed" onclick="openArch(' + i + ')"><div class="between"><b>#' + esc(o.id) +
+      '</b><span class="status off">' + esc(o.status) + '</span></div><div class="between"><span>' + esc(o.client) + "</span><b>" + money(o.fact) + '</b></div><div class="muted small">' + esc(o.date) + " · архив</div></div>").join("") : "") +
+    (!l.length && !arch.length ? '<p class="muted" style="text-align:center;">Заказов нет. Проверьте фильтр или создайте новый.</p>' : "");
+  S.arch = arch;
+}
+function renderLog() {
+  if (!S.user) return;
+  const l = S.db.orders.filter(o => AFTER_ASSEMBLY.indexOf(o.status) > -1).sort((a, b) => a.dKey.localeCompare(b.dKey));
+  byId("listL").innerHTML = l.length ? l.map(orderCard).join("") : '<p class="muted" style="text-align:center;">Собранных заказов нет.</p>';
+}
+
+// ---------- карточка заказа ----------
+function kv(k, v) { return (v === "" || v == null) ? "" : '<div class="kv"><span>' + esc(k) + "</span><b>" + v + "</b></div>"; }
+function btnH(text, js, cls) { return '<button class="' + (cls || "btn-soft") + '" onclick="' + js + '">' + esc(text) + "</button>"; }
+/** Группа кнопок: 1 — на всю строку, 2 — в строку, 3 — 2 + 1 на всю строку (и так далее). */
+function btnGroup(list) { const b = list.filter(x => x); return b.length ? '<div class="btns">' + b.join("") + "</div>" : ""; }
+/** Подряд идущие кнопки в разметке собрать в сетку по 2. */
+function gridBtns(html) {
+  // уже собранные группы (<div class="btns">…) не трогаем: иначе сетка вкладывается в сетку и кнопки сужаются
+  return html.split(/(<div class="btns">[\s\S]*?<\/div>)/).map(part => part.indexOf('<div class="btns">') === 0 ? part
+    : part.replace(/(?:<button class="[^"]*" onclick="[^"]*">[^<]*<\/button>){2,}/g, m => '<div class="btns">' + m + "</div>")).join("");
+}
+function openCard(id) {
+  const o = findOrder(id); if (!o) return;
+  const s = o.status, me = S.user;
+  const arrow = o.fact > o.plan ? " ⬆" : (o.fact < o.plan ? " ⬇" : "");
+  const nl = t => esc(t).replace(/\n/g, "<br>");
+  const debt = debtOf(o);
+  const issuer = can("issue");
+  const pickup = o.dlvType === "Самовывоз";
+  let h = '<p style="text-align:center;"><span class="' + stClass(s) + '">' + esc(s) + "</span></p>";
+  if (debt > 0) h += '<div class="pay-big">Взять с клиента: ' + money(debt) + "</div>";
+  const short = orderShortage(o);
+  if (short.length) h += '<div class="warn">⚠ Заказ под поставку. Сейчас на складе не хватает: ' + short.map(x => esc(x.name) + " (есть " + fmt(x.have) + ", нужно " + fmt(x.need) + ")").join(", ") + ". «Собран» — после прихода.</div>";
+  h += kv("Выдача", esc(o.date)) + kv("Клиент", esc(o.client) + (o.phone ? "<br>" + esc(o.phone) : "")) +
+    kv("Получатель", nl(o.recipient)) + kv("Адрес", nl(o.addr)) + kv("Состав", nl(o.desc)) +
+    kv("По РРЦ", money(o.plan)) + kv("Цена продажи", money(o.fact) + arrow) + kv("Оплачено", money(o.paid)) + (o.bonusUsed ? kv("Оплачено бонусами", money(o.bonusUsed)) : "") + (o.bonusAdd ? kv("Начислено бонусов", fmt(o.bonusAdd)) : "") +
+    kv("Оплаты", (o.pays || []).map(p => esc(p.method) + " " + money(p.sum) + ' <span class="muted small">' + esc(p.by || "") + " " + esc(p.at || "") + "</span>").join("<br>")) + kv("Источник", esc(o.source)) + kv("Скидка", esc(o.discount)) +
+    kv("Получение", esc(o.dlvType)) + (o.courier ? kv("Курьер", esc(o.courier) + (o.courierCt ? "<br>" + esc(o.courierCt) : "")) : "") +
+    (o.dlvCost ? kv("Доставка", money(o.dlvCost)) : "") + kv("Создал", esc(o.creator)) +
+    (o.assembler !== "-" ? kv("Собирает / собрал", esc(o.assembler)) : "") + (o.logist !== "-" ? kv("Выдал", esc(o.logist)) : "") +
+    kv("Создан", esc(o.created)) + kv("Взят в сборку", esc(o.tTaken)) + kv("Собран", esc(o.tDone)) + kv("Выдан", esc(o.tOut)) +
+    (o.costFact ? kv("Себестоимость", money(o.costFact)) + kv("Маржа", money(o.margin)) : "") +
+    kv("Причина", esc(o.reason)) + kv("Судьба товара", esc(o.fate));
+  h += '<div style="height:12px;"></div>';
+  [["Открыть фото-пример", o.photoEx], ["Открыть фото сборки", o.photoAs], ["Открыть фото вручения", o.photoDl]].forEach(p => {
+    if (/^https?:\/\//.test(p[1])) h += '<a class="ph" href="' + esc(p[1]) + '" target="_blank" rel="noopener">' + p[0] + "</a>";
+  });
+
+  // действия (сервер проверяет всё ещё раз)
+  if (debt > 0 && can("pay")) h += btnH("Принять оплату", "payOrder('" + o.id + "')", "btn-main");
+  if (o.overpay > 0 && o.paid > 0 && TERMINAL.indexOf(s) < 0) {
+    h += '<div class="warn">Переплата клиента: ' + money(o.overpay) + " (цену уменьшили).</div>";
+    if (can("pay")) h += btnH("Вернуть переплату", "refundOver('" + o.id + "')", "btn-out");
+  }
+  if ((s === ST.WAIT && (can("order") || can("build"))) || (s === ST.WORK && can("build") && (me.role === R.ADMIN || o.assembler === me.name)))
+    h += btnH("Изменить состав", "openEdit('" + o.id + "')", "btn-soft");
+  if (s === ST.WAIT && can("build")) h += btnH("Взять в сборку", "doStatus('" + o.id + "','" + ST.WORK + "',{},null,true)", "btn-main");
+  if (s === ST.WORK) {
+    if (can("build") && (me.role === R.ADMIN || o.assembler === me.name)) {
+      h += '<label class="lbl">Фото сборки ' + (S.db.cfg.photoRequired ? "(обязательно)" : "(по желанию)") + '</label><input type="file" id="aPhoto" accept="image/*">' +
+        btnH("Собран", "confirmDone('" + o.id + "')", "btn-main") + btnH("Вернуть в общий пул", "doStatus('" + o.id + "','" + ST.WAIT + "')", "btn-out");
+    } else h += '<p class="muted">Заказ собирает ' + esc(o.assembler) + ".</p>";
+  }
+  if (s === ST.DONE && issuer && pickup) h += btnH("Выдан самовывозом", "closeOrder('" + o.id + "','" + ST.PICKED + "')", "btn-main");
+  if (s === ST.DONE && issuer) {
+    h += '<div class="card"><h3>Передать курьеру</h3><input id="cuName" placeholder="Имя курьера">' +
+      '<input id="cuCt" placeholder="Телефон курьера / контакты"><label class="lbl">Стоимость доставки</label>' +
+      '<input id="cuCost" type="number" inputmode="decimal" value="' + (num(S.db.cfg.dlvCost) || "") + '">' +
+      btnH("Передать курьеру", "sendCourier('" + o.id + "')", "btn-main") + "</div>" +
+      (pickup ? "" : btnH("Выдан самовывозом", "closeOrder('" + o.id + "','" + ST.PICKED + "')", "btn-out"));
+  }
+  if (s === ST.PICKUP_WAIT && issuer) h += btnH("Выдан самовывозом", "closeOrder('" + o.id + "','" + ST.PICKED + "')", "btn-main");
+  if (s === ST.COURIER && issuer) {
+    h += '<label class="lbl">Фото вручения (по желанию)</label><input type="file" id="dPhoto" accept="image/*">' +
+      btnH("Получен покупателем", "closeOrder('" + o.id + "','" + ST.RECEIVED + "','dPhoto')", "btn-main") +
+      btnH("Отказ покупателя", "askCancel('" + o.id + "','" + ST.REFUSED + "')", "btn-out");
+  }
+  if (TERMINAL.indexOf(s) < 0 && me.role === R.ADMIN) h += btnH("Удалить заказ", "askDelete('" + o.id + "')", "btn-red");
+  if (TERMINAL.indexOf(s) < 0 && can("cancel")) h += btnH("Отменить заказ", "askCancel('" + o.id + "','" + ST.CANCELED + "')", "btn-red");
+
+  h += btnGroup([btnH("Печать чека", "printReceipt('" + o.id + "')", "btn-main"), btnH("Карточка сборки", "printAssembly('" + o.id + "')", "btn-main")]);
+  if (o.phone) h += btnGroup([btnH("Написать клиенту", "writeClient('" + o.id + "')", "btn-out")]);
+  h += '<hr class="hr"><h3>Комментарии</h3>' + (o.comments ? '<div class="pre">' + esc(o.comments) + "</div>" : '<p class="muted">Пока нет.</p>') +
+    '<textarea id="cmTxt" rows="2" placeholder="Новый комментарий"></textarea>' + btnH("Добавить комментарий", "addComment('" + o.id + "')", "btn-out");
+
+  S.cardId = o.id;
+  byId("cdTitle").textContent = "Заказ #" + o.id;
+  byId("cdBody").innerHTML = gridBtns(h);
+  openModal("cardM");
+}
+/** keepOpen — после действия показать карточку заново (флорист взял заказ и смотрит состав). */
+/** Смена статуса — в фоне. keepOpen: карточка не закрывается и обновится, когда сервер ответит. */
+function doStatus(id, to, extra, photoInput, keepOpen) {
+  extra = extra || {};
+  const key = id + "→" + to;
+  if (Q.jobs.some(j => j.key === key)) { toast("Уже отправлено, ждём сервер"); return; }
+  const file = photoFile(photoInput);
+  if (!keepOpen) closeModal("cardM");
+  toast("Заказ #" + id + ": " + to + " — отправлено");
+  enqueue({ key: key, label: "Заказ #" + id + " → " + to, fn: "updateOrderStatus", args: [S.token, id, to, extra], prep: photoPrep(file, extra, "photo"),
+    ok: r => { haptic("success"); toast(r.msg); applyData(r, () => refreshCard(id)); } });
+}
+function confirmDone(id) {
+  const inp = byId("aPhoto");
+  if (S.db.cfg.photoRequired && !(inp && inp.files && inp.files[0])) { showMsg("Приложите фото сборки — так задано в настройках.", true); return; }
+  askConfirm("Отметить заказ собранным? Товар спишется со склада.", () => doStatus(id, ST.DONE, {}, "aPhoto"), "Собран");
+}
+/** Выдача: без долга — подтверждение; с долгом — окно оплаты на всю сумму (в долг не выдаём). */
+function closeOrder(id, to, photoInput) {
+  const o = findOrder(id); if (!o) return;
+  const debt = debtOf(o);
+  if (debt <= 0) { askConfirm("Заказ #" + id + ": отметить «" + to + "»? Заказ будет закрыт.", () => doStatus(id, to, {}, photoInput), "Подтвердить"); return; }
+  if (!can("pay")) { showMsg("По заказу долг " + money(debt) + ". У вас нет права принимать оплату — позовите сотрудника, который может.", true); return; }
+  payDialog(o, true, pays => doStatus(id, to, { payments: pays }, photoInput));
+}
+/** Окно оплаты. exact — нужно ровно на сумму долга (выдача); иначе от 0 до долга. */
+function payDialog(o, exact, onPay) {
+  const debt = debtOf(o);
+  S.payNeed = debt;
+  dialog({ title: (exact ? "Оплата при выдаче #" : "Принять оплату #") + o.id,
+    html: '<div class="pay-big">' + (exact ? "Взять с клиента: " : "Долг: ") + money(debt) + "</div>" +
+      '<div id="payRows"></div><button class="btn-out" onclick="addPayRow()">+ ещё способ</button><p id="payInfo" class="muted small"></p>',
+    ok: exact ? "Оплачено, выдать" : "Принять", onOk: root => {
+      const rows = Array.prototype.slice.call(root.querySelectorAll(".payrow"));
+      const pays = rows.map(r => ({ method: r.querySelector("select").value, sum: num(r.querySelector("input").value) })).filter(p => p.sum > 0 || p.method);
+      if (!pays.length) { dlgError("Укажите сумму и способ."); return false; }
+      if (pays.some(p => !p.method)) { dlgError("Выберите способ для каждой суммы."); return false; }
+      if (pays.some(p => p.sum <= 0)) { dlgError("Сумма должна быть больше нуля."); return false; }
+      const total = Math.round(pays.reduce((a, p) => a + p.sum, 0) * 100) / 100;
+      if (exact && total !== debt) { dlgError("Нужно ровно " + money(debt) + ", введено " + money(total) + "."); return false; }
+      if (!exact && total > debt) { dlgError("Больше долга: введено " + money(total) + "."); return false; }
+      return () => onPay(pays);
+    } });
+  addPayRow(debt);
+}
+function addPayRow(sum) {
+  const box = byId("payRows"); if (!box) return;
+  const d = document.createElement("div");
+  d.className = "row payrow";
+  d.innerHTML = '<select style="margin:0 0 8px;">' + '<option value="">Способ</option>' + (S.db.lists.pay || []).map(m => '<option value="' + esc(m) + '">' + esc(m) + "</option>").join("") +
+    '</select><input type="number" inputmode="decimal" placeholder="Сумма" style="margin:0 0 8px;" oninput="updPayInfo()">';
+  box.appendChild(d);
+  if (sum) d.querySelector("input").value = sum;
+  else { const left = S.payNeed - payTyped(); if (left > 0) d.querySelector("input").value = Math.round(left * 100) / 100; }
+  updPayInfo();
+}
+function payTyped() { return Array.prototype.slice.call(document.querySelectorAll(".payrow input")).reduce((a, i) => a + num(i.value), 0); }
+function updPayInfo() { const el = byId("payInfo"); if (el) el.textContent = "Введено: " + money(payTyped()) + " из " + money(S.payNeed); }
+function payOrder(id) {
+  const o = findOrder(id); if (!o) return;
+  payDialog(o, false, pays => {
+    const rq = uuid();
+    toast("Оплата отправлена");
+    enqueue({ label: "Оплата по заказу #" + id, fn: "addPayment", args: [S.token, id, pays, rq], ok: r => { toast(r.msg); applyData(r, () => refreshCard(id)); } });
+  });
+}
+function sendCourier(id) {
+  const name = byId("cuName").value.trim();
+  if (!name) { showMsg("Укажите имя курьера.", true); return; }
+  doStatus(id, ST.COURIER, { courier: name, courierContact: byId("cuCt").value.trim(), deliveryCost: byId("cuCost").value });
+}
+function refundHtml(o) {
+  if (!(o.paid > 0)) return "";
+  return '<div class="warn">Клиент уже оплатил ' + money(o.paid) + '.</div>' +
+    '<label class="opt"><input type="radio" name="rf" value="back" onchange="rfShow(true)">Вернуть деньги клиенту</label>' +
+    '<div id="rfBox" style="display:none;"><div class="row"><select id="rfM" style="margin:0 0 8px;"><option value="">Способ</option>' + (S.db.lists.pay || []).map(m => '<option value="' + esc(m) + '">' + esc(m) + "</option>").join("") +
+    '</select><input id="rfS" type="number" inputmode="decimal" value="' + o.paid + '" style="margin:0 0 8px;"></div></div>' +
+    '<label class="opt"><input type="radio" name="rf" value="keep" onchange="rfShow(false)">Не возвращать (предоплата/штраф)</label>';
+}
+function rfShow(on) { const b = byId("rfBox"); if (b) b.style.display = on ? "block" : "none"; }
+function readRefund(root, o) {
+  if (!(o.paid > 0)) return { ok: true, v: null };
+  const r = root.querySelector("input[name=rf]:checked");
+  if (!r) return { ok: false, e: "Выберите: вернуть деньги или не возвращать." };
+  if (r.value === "keep") return { ok: true, v: { keep: true } };
+  if (!can("pay")) return { ok: false, e: "Вернуть деньги может сотрудник с правом «Принимать оплату»." };
+  const m = root.querySelector("#rfM").value, sum = num(root.querySelector("#rfS").value);
+  if (!m) return { ok: false, e: "Выберите способ возврата." };
+  if (sum <= 0 || sum > o.paid) return { ok: false, e: "Сумма возврата — от 0 до " + money(o.paid) + "." };
+  return { ok: true, v: { pays: [{ method: m, sum: sum }] } };
+}
+function askCancel(id, to) {
+  const o = findOrder(id); if (!o) return;
+  const after = AFTER_ASSEMBLY.indexOf(o.status) > -1;
+  let html = "<p>" + (after ? "Заказ уже собран. Что сделать с цветами?" : "Резерв снимется, товар снова станет доступен для продажи.") + "</p>";
+  if (after) html += '<label class="opt"><input type="radio" name="fate" value="' + FATE_RETURN + '">Вернуть на склад как есть</label>' +
+    '<label class="opt"><input type="radio" name="fate" value="' + FATE_UTIL + '">Списать в убыток (утилизация)</label>';
+  html += refundHtml(o);
+  if (o.bonusUsed) html += '<p class="muted small">Списанные бонусы (' + fmt(o.bonusUsed) + ") вернутся клиенту.</p>";
+  html += '<textarea id="dlgReason" rows="2" placeholder="Причина (обязательно)"></textarea>';
+  dialog({ title: (to === ST.CANCELED ? "Отмена заказа #" : "Отказ по заказу #") + id, html: html,
+    ok: to === ST.CANCELED ? "Отменить заказ" : "Оформить отказ", danger: true,
+    onOk: root => {
+      const reason = root.querySelector("#dlgReason").value.trim();
+      let fate = "";
+      if (after) { const f = root.querySelector("input[name=fate]:checked"); if (!f) { dlgError("Выберите, что сделать с цветами."); return false; } fate = f.value; }
+      const rf = readRefund(root, o); if (!rf.ok) { dlgError(rf.e); return false; }
+      if (!reason) { dlgError("Укажите причину."); return false; }
+      const extra = { reason: reason, fate: fate }; if (rf.v) extra.refund = rf.v;
+      return () => doStatus(id, to, extra);
+    } });
+}
+function askDelete(id) {
+  const o = findOrder(id); if (!o) return;
+  if (o.paid > 0) { showMsg("По заказу были оплаты (" + money(o.paid) + "). Сначала «Отменить заказ» с возвратом денег — так касса сойдётся.", true); return; }
+  const after = AFTER_ASSEMBLY.indexOf(o.status) > -1;
+  let html = '<p>Заказ исчезнет из списка. Копия строки сохранится в «Журнал_Действий».</p>';
+  if (after) html += '<label class="opt"><input type="radio" name="fate" value="' + FATE_RETURN + '">Цветы вернуть на склад</label><label class="opt"><input type="radio" name="fate" value="' + FATE_UTIL + '">Цветы списать</label>';
+  html += '<textarea id="dlgReason" rows="2" placeholder="Причина удаления (обязательно)"></textarea>';
+  dialog({ title: "Удалить заказ #" + id + "?", html: html, ok: "Удалить", danger: true, onOk: root => {
+    const reason = root.querySelector("#dlgReason").value.trim(); let fate = "";
+    if (after) { const f = root.querySelector("input[name=fate]:checked"); if (!f) { dlgError("Выберите, что сделать с цветами."); return false; } fate = f.value; }
+    if (!reason) { dlgError("Укажите причину."); return false; }
+    return () => { closeModal("cardM"); enqueue({ label: "Удаление #" + id, fn: "deleteOrder", args: [S.token, id, reason, fate], ok: r => { toast(r.msg); applyData(r); } }); };
+  } });
+}
+function refundOver(id) {
+  const o = findOrder(id); if (!o) return;
+  const lim = Math.min(o.overpay, o.paid);
+  dialog({ title: "Вернуть переплату #" + id, html: '<div class="pay-big">Вернуть: ' + money(lim) + '</div><select id="roM"><option value="">Способ</option>' +
+    (S.db.lists.pay || []).map(m => '<option value="' + esc(m) + '">' + esc(m) + "</option>").join("") + '</select><input id="roS" type="number" inputmode="decimal" value="' + lim + '">',
+    ok: "Вернуть", onOk: root => {
+      const m = root.querySelector("#roM").value, sum = num(root.querySelector("#roS").value);
+      if (!m) { dlgError("Выберите способ."); return false; }
+      if (sum <= 0 || sum > lim) { dlgError("Сумма — до " + money(lim) + "."); return false; }
+      return () => enqueue({ label: "Возврат по #" + id, fn: "refundOverpay", args: [S.token, id, [{ method: m, sum: sum }], uuid()], ok: r => { toast(r.msg); applyData(r, () => refreshCard(id)); } });
+    } });
+}
+function addComment(id) {
+  const t = byId("cmTxt").value.trim();
+  if (!t) { showMsg("Напишите текст комментария.", true); return; }
+  byId("cmTxt").value = "";
+  enqueue({ label: "Комментарий к #" + id, fn: "addOrderComment", args: [S.token, id, t], ok: r => { toast(r.msg); applyData(r, () => refreshCard(id)); } });
+}
+
+// ---------- склад ----------
+function renderStock() {
+  if (!S.user || !can("stock")) return;
+  const q = (byId("sq").value || "").trim().toLowerCase(), crit = num(S.db.cfg.critical), showCost = can("cost");
+  const l = S.db.stock.filter(i => (!q || i.name.toLowerCase().indexOf(q) > -1) && !(i.cat === VIT && i.phys <= 0));
+  byId("listS").innerHTML = l.length ? l.map(i => {
+    const lack = i.av < 0, lim = i.min !== "" && i.min != null ? num(i.min) : crit, low = i.av < lim;
+    return '<div class="card' + (low ? " low" : "") + '"><div class="between"><b>' + esc(i.name) + "</b><b>" + money(i.rrp) + "</b></div>" +
+      '<div class="muted small" style="margin:2px 0 8px;">' + esc(i.cat) + (i.own ? " · своя цена" : "") + (showCost ? " · себест. " + money(i.cost) : "") + (i.active ? "" : " · отключён") +
+      (i.cat !== VIT ? " · минимум: " + (i.min !== "" && i.min != null ? fmt(i.min) + " (свой)" : fmt(crit) + " (общий)") + (can("purchase") ? ' <a href="#" onclick="setMin(' + S.db.stock.indexOf(i) + ');return false;">✎</a>' : "") : "") + "</div>" +
+      '<div class="stock3"><div><span class="muted small">Всего</span><b>' + fmt(i.phys) + '</b></div><div><span class="muted small">В резерве</span><b>' + fmt(i.res) +
+      '</b></div><div><span class="muted small">' + (lack ? "Не хватает" : "Доступно") + '</span><b style="color:' + (low ? "var(--red)" : "var(--ok)") + ';">' + fmt(lack ? -i.av : i.av) + "</b></div></div></div>";
+  }).join("") : '<p class="muted" style="text-align:center;">Ничего не найдено.</p>';
+}
+function setMin(ix) {
+  const it = S.db.stock[ix]; if (!it) return;
+  const name = it.name;
+  dialog({ title: "Постоянный минимум: " + name, html: '<p class="muted small">Сколько должно быть на складе всегда (для закупки). Пусто — не задан.</p><input type="number" id="minV" inputmode="decimal" value="' + (it.min !== "" && it.min != null ? it.min : "") + '">',
+    ok: "Сохранить", onOk: root => { const v = root.querySelector("#minV").value.trim();
+      return () => enqueue({ label: "Минимум «" + name + "»", fn: "setStockMin", args: [S.token, name, v], ok: r => { toast(r.msg); applyData(r); } }); } });
+}
+function optionsHtml(list, placeholder) { return '<option value="">' + esc(placeholder) + "</option>" + list.map(v => '<option value="' + esc(v) + '">' + esc(v) + "</option>").join(""); }
+
+// ---------- форма заказа ----------
+function openOrderForm() {
+  const L = S.db.lists;
+  byId("oSrc").innerHTML = optionsHtml(L.src || [], "Откуда клиент (по желанию)");
+  byId("oSrc").onchange = () => { S.autoSrc = false; };
+  if (!byId("cPhone").value) byId("cPhoneHint").textContent = PHONE_HINT;
+  byId("oPay").innerHTML = optionsHtml(L.pay || [], "Выберите способ");
+  const ds = S.db.discounts || [];
+  byId("loyBox").style.display = "block";
+  byId("oDisc").parentNode.style.display = ds.length ? "block" : "none";
+  if (!byId("oDisc").options.length || byId("oDisc").dataset.n !== String(ds.length)) {
+    byId("oDisc").innerHTML = '<option value="">Без скидки</option>' + ds.map(x => '<option value="' + esc(x.name) + '">' + esc(x.name) + " −" + fmt(x.pct) + "%</option>").join("");
+    byId("oDisc").dataset.n = String(ds.length);
+  }
+  if (!byId("oHour").options.length) {
+    let hh = '<option value="">Часы</option>';
+    for (let i = 0; i < 24; i++) hh += "<option>" + ("0" + i).slice(-2) + "</option>";
+    byId("oHour").innerHTML = hh;
+  }
+  if (!S.dlv) setDlv("Курьер");
+  byId("oPrep").disabled = !can("pay"); byId("oPay").disabled = !can("pay");
+  fillOrderSelect();
+  renderCart();
+  openModal("orderM");
+}
+function fillOrderSelect() {
+  const allow = S.db.cfg.allowShortage;
+  const list = S.db.stock.filter(i => i.active && (allow || i.av > 0));
+  byId("oSel").innerHTML = '<option value="">Выберите товар</option>' + list.map(i =>
+    '<option value="' + esc(i.name) + '">' + esc(i.name) + " — " + money(i.rrp) + (i.av > 0 ? " (свободно " + fmt(i.av) + ")" : " (под поставку)") + "</option>").join("");
+}
+function setDlv(t) {
+  S.dlv = t;
+  byId("dvCour").classList.toggle("on", t === "Курьер");
+  byId("dvPick").classList.toggle("on", t === "Самовывоз");
+  byId("addrBox").style.display = t === "Самовывоз" ? "none" : "block";
+}
+const PHONE_HINT = "Полный номер с кодом страны (+79161234567, +375291234567, +77011234567) или 4 последние цифры (4567) — клиент ищется сам.";
+let phoneTimer = null;
+function onPhoneInput() {
+  const raw = byId("cPhone").value.trim(), p = normPhone(raw), hint = byId("cPhoneHint"), digits = raw.replace(/\D/g, "");
+  syncSelfRec();
+  clearTimeout(phoneTimer);
+  if (!raw) { hint.textContent = PHONE_HINT; byId("cResults").innerHTML = ""; S.lastQ = ""; return; }
+  const last4 = raw.charAt(0) !== "+" && digits.length === 4;
+  const full = digits.length >= 10 && phoneOk(p);
+  hint.textContent = last4 ? "Ищем по последним цифрам…" : (digits.length < 10 ? PHONE_HINT : (full ? "Сохранится как " + p : "Сохранится как " + p + " — проверьте количество цифр."));
+  if (last4 || full) {
+    const q = last4 ? digits : p;
+    phoneTimer = setTimeout(() => { if (q !== S.lastQ) findClient(q, full); }, 700);
+  }
+}
+/** Поиск клиента (сам, после паузы в наборе). full — введён полный номер. */
+function findClient(q, full) {
+  S.lastQ = q;
+  call("searchClient", [S.token, q], list => {
+    const box = byId("cResults");
+    S.found = list;
+    if (!list.length) { showBonus(null); box.innerHTML = '<p class="muted small">' + (full ? "Новый клиент — заполните имя, он сохранится вместе с заказом." : "По этим цифрам клиентов нет.") + "</p>"; setRegular(false); return; }
+    if (full && list.length === 1) { pickClient(0); return; }
+    box.innerHTML = '<p class="muted small">Найдено: ' + list.length + ". Выберите клиента:</p>" + list.map((c, i) =>
+      '<div class="pick" onclick="pickClient(' + i + ')"><b>' + esc(c.phone) + "</b> · " + esc(c.name) + '<br><span class="muted small">заказов: ' + fmt(c.orders) + " · бонусы: " + fmt(c.bonus) +
+      (c.mem1 ? " · даты: " + esc(c.mem1) + (c.mem2 ? ", " + esc(c.mem2) : "") : "") + "</span></div>").join("");
+  }, "Ищем клиента…");
+}
+function pickClient(i) {
+  const c = S.found[i]; if (!c) return;
+  S.lastQ = c.phone;
+  byId("cPhone").value = c.phone; byId("cName").value = c.name; byId("cMem1").value = c.mem1 || ""; byId("cMem2").value = c.mem2 || "";
+  byId("cResults").innerHTML = '<p class="small" style="color:var(--ok);">Выбран клиент: ' + esc(c.name) + " · заказов " + fmt(c.orders) + " · бонусов " + fmt(c.bonus) + "</p>";
+  byId("cPhoneHint").textContent = "Сохранится как " + c.phone;
+  setRegular(c.orders > 0);
+  showBonus(c);
+  syncSelfRec();
+}
+/** Источник «Постоянный клиент», если заказы уже были (только если источник не выбран вручную). */
+function setRegular(on) {
+  const sel = byId("oSrc"), has = Array.prototype.some.call(sel.options, o => o.value === "Постоянный клиент");
+  if (!has) return;
+  if (on && (!sel.value || S.autoSrc)) { sel.value = "Постоянный клиент"; S.autoSrc = true; }
+  if (!on && S.autoSrc) { sel.value = ""; S.autoSrc = false; }
+}
+/** «Получатель — сам заказчик»: подставить имя и телефон клиента. */
+function syncSelfRec() {
+  const on = byId("selfRec").checked, rec = byId("oRec");
+  rec.disabled = on;
+  if (on) rec.value = [byId("cName").value.trim(), normPhone(byId("cPhone").value)].filter(x => x).join(", ");
+}
+function addCart() {
+  const name = byId("oSel").value, qty = num(byId("oQty").value);
+  if (!name) { showMsg("Выберите товар.", true); return; }
+  if (qty <= 0) { showMsg("Укажите количество больше нуля.", true); return; }
+  const item = stockOf(name); if (!item) return;
+  const line = S.cart.find(c => c.name === name);
+  const total = (line ? line.qty : 0) + qty;
+  if (total > item.av && !S.db.cfg.allowShortage) { showMsg("«" + name + "»: свободно только " + fmt(Math.max(0, item.av)) + ".", true); return; }
+  if (line) line.qty = Math.round(total * 100) / 100; else S.cart.push({ name: name, qty: qty, price: item.rrp });
+  byId("oQty").value = ""; byId("oSel").value = "";
+  if (total > item.av) toast("«" + name + "»: не хватает " + fmt(total - Math.max(0, item.av)) + " — заказ под поставку");
+  haptic(); renderCart();
+}
+function removeCart(i) { S.cart.splice(i, 1); renderCart(); }
+function cartSum() { return Math.round(S.cart.reduce((s, c) => s + c.qty * c.price, 0) * 100) / 100; }
+function renderCart() {
+  byId("cartL").innerHTML = S.cart.map((c, i) => {
+    const it = stockOf(c.name), free = it ? Math.max(0, it.av) : 0, lack = c.qty - free;
+    return '<div class="line"><span>' + esc(c.name) + " × " + fmt(c.qty) + (lack > 0 ? '<br><span class="small" style="color:#8a5a00;">⚠ не хватает ' + fmt(lack) + " — под поставку</span>" : "") +
+      "</span><span>" + money(c.qty * c.price) + '<button class="x" onclick="removeCart(' + i + ')" aria-label="Убрать">✕</button></span></div>';
+  }).join("");
+  byId("pSum").textContent = money(cartSum()) + (S.cart.length && S.cart.every(c => (stockOf(c.name) || {}).cat === VIT) ? " · с витрины: заказ сразу «Собран»" : "");
+  if (byId("oDisc").value) applyDisc(true);
+  else if (!S.factTouched) byId("oFact").value = S.cart.length ? cartSum() : "";
+  updDebt();
+}
+/** Скидка из списка: цена продажи = сумма по РРЦ − %. */
+function applyDisc(silent) {
+  const n = byId("oDisc").value, d = (S.db.discounts || []).find(x => x.name === n);
+  if (!d) { S.factTouched = false; byId("oFact").value = S.cart.length ? cartSum() : ""; updDebt(); return; }
+  byId("oFact").value = Math.round(cartSum() * (100 - d.pct)) / 100; S.factTouched = true;
+  if (!silent) toast("Скидка «" + d.name + "» " + fmt(d.pct) + "%");
+  updDebt();
+}
+function updDebt() {
+  const f = byId("oFact").value === "" ? cartSum() : num(byId("oFact").value), p = num(byId("oPrep").value), b = num(byId("oBonus").value), d = Math.max(0, f - p - b);
+  byId("oDebt").innerHTML = S.cart.length ? '<div class="pay-big">Взять с клиента: ' + money(d) + (b > 0 ? '<div class="small" style="font-weight:500;">цена ' + money(f) + " − бонусы " + fmt(b) + (p > 0 ? " − предоплата " + money(p) : "") + "</div>" : "") + "</div>" : "";
+}
+/** Поле бонусов — когда выбран клиент с бонусами. */
+function showBonus(c) {
+  S.clientBonus = c && c.bonus > 0 ? c.bonus : 0;
+  byId("bonusLbl").parentNode.style.display = S.clientBonus > 0 ? "block" : "none";
+  byId("bonusLbl").textContent = "Списать бонусы (доступно " + fmt(S.clientBonus) + (num(S.db.cfg.bonusMax) < 100 ? ", не больше " + fmt(S.db.cfg.bonusMax) + "% заказа" : "") + ")";
+  if (!S.clientBonus) byId("oBonus").value = "";
+}
+function resetOrderForm() {
+  ["cPhone", "cName", "cMem1", "cMem2", "oDay", "oHour", "oMin", "oRec", "oAddr", "oFact", "oPrep", "oPay", "oCom", "oQty", "oBonus", "oDisc"].forEach(id => { byId(id).value = ""; });
+  showBonus(null);
+  setDlv("Курьер");
+  byId("oPhoto").value = ""; byId("cResults").innerHTML = ""; byId("selfRec").checked = false; S.autoSrc = false; S.lastQ = ""; onPhoneInput();
+  S.cart = []; S.factTouched = false; S.reqOrder = null; renderCart();
+}
+function submitOrder() {
+  if (!S.cart.length) { showMsg("Добавьте в заказ хотя бы одну позицию.", true); return; }
+  const day = byId("oDay").value, hh = byId("oHour").value, mm = byId("oMin").value;
+  if (!day || !hh || !mm) { showMsg("Выберите дату, часы и минуты выдачи.", true); return; }
+  const rawPhone = byId("cPhone").value.trim(), phone = normPhone(rawPhone);
+  if (rawPhone && !phoneOk(phone)) { showMsg("Проверьте телефон: " + phone + ". Нужен полный номер с кодом страны, например +79161234567. Если искали по 4 цифрам — выберите клиента из списка.", true); return; }
+  const m1 = byId("cMem1").value.trim(), m2 = byId("cMem2").value.trim();
+  if (!dmOk(m1) || !dmOk(m2)) { showMsg("Памятная дата — в формате ДД.ММ, например 15.05.", true); return; }
+  const factRaw = byId("oFact").value, fact = factRaw === "" ? cartSum() : num(factRaw), prep = num(byId("oPrep").value);
+  if (fact < 0 || prep < 0) { showMsg("Суммы не могут быть отрицательными.", true); return; }
+  if (prep > fact) { showMsg("Предоплата больше цены продажи.", true); return; }
+  if (prep > 0 && !byId("oPay").value) { showMsg("Выберите способ предоплаты.", true); return; }
+  const bonus = num(byId("oBonus").value);
+  if (bonus < 0 || bonus > (S.clientBonus || 0)) { showMsg("Бонусов доступно " + fmt(S.clientBonus || 0) + ".", true); return; }
+  if (bonus + prep > fact) { showMsg("Бонусы + предоплата больше цены продажи.", true); return; }
+  if (bonus > Math.floor(fact * num(S.db.cfg.bonusMax || 100) / 100)) { showMsg("Бонусами можно оплатить не больше " + fmt(S.db.cfg.bonusMax) + "% заказа.", true); return; }
+  const d = { discount: byId("oDisc").value, bonus: bonus, requestId: S.reqOrder || uuid(), phone: phone, clientName: byId("cName").value.trim(), mem1: m1, mem2: m2,
+    source: byId("oSrc").value, date: isoToRu(day) + " " + hh + ":" + mm, recipient: byId("oRec").value.trim(),
+    dlvType: S.dlv, address: S.dlv === "Самовывоз" ? "" : byId("oAddr").value.trim(),
+    items: S.cart.map(c => ({ name: c.name, qty: c.qty })), fact: factRaw === "" ? "" : fact, prepay: prep,
+    payMethod: byId("oPay").value, comment: byId("oCom").value.trim() };
+  const draft = saveDraft(), file = photoFile("oPhoto");
+  resetOrderForm(); closeModal("orderM");
+  toast("Заказ отправлен — можно оформлять следующий");
+  sendOrder(d, draft, file);
+}
+/** Черновик формы — чтобы вернуть его, если сервер откажет. */
+function saveDraft() {
+  const ids = ["cPhone", "cName", "cMem1", "cMem2", "oSrc", "oDay", "oHour", "oMin", "oRec", "oAddr", "oFact", "oPrep", "oPay", "oCom", "oBonus", "oDisc"];
+  const v = {}; ids.forEach(i => { v[i] = byId(i).value; });
+  return { v: v, cart: S.cart.map(c => Object.assign({}, c)), dlv: S.dlv, self: byId("selfRec").checked, touched: S.factTouched, bonus: S.clientBonus || 0 };
+}
+function restoreDraft(dr) {
+  openOrderForm();
+  Object.keys(dr.v).forEach(i => { byId(i).value = dr.v[i]; });
+  S.cart = dr.cart; S.factTouched = dr.touched; setDlv(dr.dlv || "Курьер"); byId("selfRec").checked = dr.self; syncSelfRec();
+  S.lastQ = normPhone(dr.v.cPhone); showBonus(dr.bonus ? { bonus: dr.bonus } : null); byId("oBonus").value = dr.v.oBonus;
+  renderCart(); if (dr.touched) byId("oFact").value = dr.v.oFact; updDebt(); onPhoneInput();
+}
+function sendOrder(d, draft, file) {
+  enqueue({ label: "Новый заказ (" + (d.clientName || d.phone || "без имени") + ")", fn: "createOrder", args: [S.token, d], prep: photoPrep(file, d, "photo"),
+    ok: r => {
+      if (r.needConfirm) {   // сервер нашёл нехватку — спрашиваем
+        const txt = r.shortages.map(s => "• " + s.name + ": свободно " + fmt(s.free) + ", в заказе " + fmt(s.qty) + ", не хватает " + fmt(s.lack)).join("\n");
+        dialog({ title: "Товара не хватает", html: '<p style="white-space:pre-wrap;">' + esc(txt) + "\n\nОформить заказ под поставку? Товар зарезервируется, «Собран» — после прихода.</p>",
+          ok: "Оформить под поставку", cancel: "Вернуться к заказу",
+          onOk: () => () => { d.allowShortage = true; sendOrder(d, draft, null); }, onCancel: () => restoreDraft(draft) });
+        return;
+      }
+      haptic("success"); toast(r.msg.split("\n")[0]); applyData(r);
+    },
+    fail: m => {
+      dialog({ title: "Заказ не создан", html: '<p style="white-space:pre-wrap;">' + esc(m) + "</p>", ok: "Вернуться к заказу", cancel: "Отменить",
+        onOk: () => () => restoreDraft(draft) });
+      return true;
+    } });
+}
+
+// ---------- изменение состава ----------
+function openEdit(id) {
+  const o = findOrder(id); if (!o) return;
+  S.ed = { id: id, lines: o.items.map(x => ({ name: x.name, qty: x.qty, price: x.price })), oldFact: o.fact, orig: o.items };
+  byId("edTitle").textContent = "Состав #" + id;
+  byId("edSel").innerHTML = '<option value="">Добавить товар</option>' + S.db.stock.filter(i => i.active && (i.av > 0 || S.db.cfg.allowShortage)).map(i =>
+    '<option value="' + esc(i.name) + '">' + esc(i.name) + " — " + money(i.rrp) + " (свободно " + fmt(Math.max(0, i.av)) + ")</option>").join("");
+  byId("edOldLbl").textContent = "Прежняя цена: " + money(o.fact) + ". Кнопка «Прежняя» подставит её, или впишите новую (пустое поле = прежняя)";
+  byId("edPrice").value = ""; byId("edReason").value = ""; byId("edQty").value = "";
+  edRender(); openModal("editM");
+}
+function edRender() {
+  const L = S.ed.lines;
+  byId("edLines").innerHTML = L.map((c, i) => '<div class="line"><span>' + esc(c.name) + '</span><span style="white-space:nowrap;">' +
+    '<button class="btn-soft" style="width:auto;margin:0;padding:4px 10px;" onclick="edQty(' + i + ',-1)">−</button> <b>' + fmt(c.qty) +
+    '</b> <button class="btn-soft" style="width:auto;margin:0;padding:4px 10px;" onclick="edQty(' + i + ',1)">+</button>' +
+    '<button class="x" onclick="edDel(' + i + ')" aria-label="Убрать">✕</button></span></div>').join("") || '<p class="muted">Позиций нет — добавьте товар.</p>';
+  byId("edSum").textContent = money(L.reduce((a, c) => a + c.qty * c.price, 0));
+}
+function edOldPrice() { byId("edPrice").value = S.ed ? S.ed.oldFact : ""; toast("Подставлена прежняя цена"); }
+function edQty(i, d) { const c = S.ed.lines[i]; c.qty = Math.max(1, Math.round((c.qty + d) * 100) / 100); edRender(); }
+function edDel(i) { S.ed.lines.splice(i, 1); edRender(); }
+function edAdd() {
+  const name = byId("edSel").value, q = num(byId("edQty").value) || 1;
+  if (!name) { showMsg("Выберите товар.", true); return; }
+  const it = stockOf(name), ex = S.ed.lines.find(c => c.name === name);
+  const old = S.ed.orig.find(c => c.name === name);
+  if (ex) ex.qty = Math.round((ex.qty + q) * 100) / 100; else S.ed.lines.push({ name: name, qty: q, price: old ? old.price : it.rrp });
+  byId("edSel").value = ""; byId("edQty").value = ""; edRender();
+}
+function edSave(allowShortage) {
+  if (!S.ed.lines.length) { showMsg("В заказе должна остаться хотя бы одна позиция. Чтобы убрать всё — отмените заказ.", true); return; }
+  const id = S.ed.id, pr = byId("edPrice").value.trim();
+  if (pr !== "" && num(pr) < 0) { showMsg("Цена не может быть отрицательной.", true); return; }
+  const d = { items: S.ed.lines.map(c => ({ name: c.name, qty: c.qty })), price: pr === "" ? "" : num(pr), reason: byId("edReason").value.trim(), requestId: uuid(), allowShortage: !!allowShortage };
+  const snap = JSON.parse(JSON.stringify(S.ed));
+  closeModal("editM");
+  enqueue({ label: "Состав #" + id, fn: "editOrderItems", args: [S.token, id, d], ok: r => {
+    if (r.needConfirm) {
+      const txt = r.shortages.map(x => "• " + x.name + ": не хватает " + fmt(x.lack)).join("\n");
+      dialog({ title: "Товара не хватает", html: '<p style="white-space:pre-wrap;">' + esc(txt) + "\n\nСохранить под поставку?</p>", ok: "Сохранить", cancel: "Вернуться",
+        onOk: () => () => { S.ed = snap; edSaveRaw(d); }, onCancel: () => { S.ed = snap; openModal("editM"); edRender(); } });
+      return;
+    }
+    toast(r.msg); applyData(r, () => refreshCard(id));
+  }, fail: m => { dialog({ title: "Состав не изменён", html: "<p>" + esc(m) + "</p>", ok: "Вернуться", cancel: "Закрыть", onOk: () => () => { S.ed = snap; openModal("editM"); edRender(); } }); return true; } });
+}
+function edSaveRaw(d) {
+  d.allowShortage = true; d.requestId = uuid();
+  const id = S.ed.id;
+  enqueue({ label: "Состав #" + id, fn: "editOrderItems", args: [S.token, id, d], ok: r => { toast(r.msg); applyData(r, () => refreshCard(id)); } });
+}
+
+// ---------- админ: бонусы клиента ----------
+function openBonusAdj() {
+  ["baPhone", "baSum", "baNote"].forEach(x => { byId(x).value = ""; });
+  byId("baReason").innerHTML = optionsHtml(S.db.lists.bonusR || [], "Выберите причину");
+  byId("baRes").innerHTML = ""; byId("baBox").style.display = "none"; S.baClient = null; S.baQ = "";
+  openModal("baM");
+}
+let baTimer = null;
+function baInput() {
+  const raw = byId("baPhone").value.trim(), d = raw.replace(/\D/g, "");
+  clearTimeout(baTimer);
+  const q = raw.charAt(0) !== "+" && d.length === 4 ? d : (d.length >= 10 ? normPhone(raw) : "");
+  if (q && q !== S.baQ) baTimer = setTimeout(() => {
+    S.baQ = q;
+    call("searchClient", [S.token, q], list => {
+      S.baList = list;
+      byId("baRes").innerHTML = list.length ? list.map((c, i) => '<div class="pick" onclick="baPick(' + i + ')"><b>' + esc(c.phone) + "</b> · " + esc(c.name) + '<br><span class="muted small">бонусов: ' + fmt(c.bonus) + "</span></div>").join("")
+        : '<p class="muted small">Клиент не найден.</p>';
+    }, "Ищем клиента…");
+  }, 600);
+}
+function baPick(i) {
+  const c = S.baList[i]; if (!c) return;
+  S.baClient = c;
+  byId("baRes").innerHTML = '<div class="card"><b>' + esc(c.name) + "</b> · " + esc(c.phone) + '<div class="pay-big" style="margin:8px 0 0;background:var(--ok-bg);color:var(--ok);border-color:var(--ok);">Бонусов: ' + fmt(c.bonus) + "</div></div>";
+  byId("baBox").style.display = "block";
+}
+function bonusAll() {
+  dialog({ title: "Бонусы всем клиентам",
+    html: '<p class="muted small">Всем клиентам с телефоном. «+» — начислить каждому, «−» — снять у каждого (у кого меньше — снимется сколько есть).</p>' +
+      '<input type="number" id="bxSum" inputmode="decimal" placeholder="Например 300 или -300">' +
+      '<select id="bxReason">' + optionsHtml(S.db.lists.bonusR || [], "Причина") + "</select>" +
+      '<input id="bxNote" placeholder="Комментарий (по желанию), например «8 Марта»">',
+    ok: "Применить ко всем", onOk: root => {
+      const d = num(root.querySelector("#bxSum").value), reason = root.querySelector("#bxReason").value, note = root.querySelector("#bxNote").value.trim();
+      if (!d) { dlgError("Укажите сумму."); return false; }
+      if (!reason) { dlgError("Выберите причину."); return false; }
+      return () => askConfirm((d > 0 ? "Начислить каждому клиенту " + fmt(d) : "Снять у каждого клиента до " + fmt(-d)) + " бонусов? Отменить можно будет только обратной операцией.", () =>
+        enqueue({ label: "Бонусы всем", fn: "adjustBonusAll", args: [S.token, d, reason, note, uuid()], ok: r => { showMsg(r.msg); applyData(r); } }), "Применить", d < 0);
+    } });
+}
+function baSave() {
+  const c = S.baClient; if (!c) { showMsg("Выберите клиента.", true); return; }
+  const d = num(byId("baSum").value), note = byId("baNote").value.trim(), reason = byId("baReason").value;
+  if (!d) { showMsg("Укажите сумму: + начислить, − снять.", true); return; }
+  if (c.bonus + d < 0) { showMsg("Нельзя снять больше, чем есть (" + fmt(c.bonus) + ").", true); return; }
+  if (!reason) { showMsg("Выберите причину. Список — на листе настроек (ПРИЧИНЫ БОНУСОВ).", true); return; }
+  askConfirm(c.name + ": " + (d > 0 ? "+" : "") + fmt(d) + " бонусов. Станет " + fmt(c.bonus + d) + ".", () => {
+    closeModal("baM");
+    enqueue({ label: "Бонусы " + c.phone, fn: "adjustBonus", args: [S.token, c.phone, d, reason, note, uuid()], ok: r => { toast(r.msg); applyData(r); } });
+  }, "Сохранить");
+}
+
+// ---------- админ: настройки из приложения ----------
+const ADM_TITLES = { params: "Параметры", emps: "Сотрудники", lists: "Списки и скидки", items: "Товары", tools: "Обслуживание", roles: "Шаблоны должностей", msgs: "Шаблоны сообщений" };
+function openAdm(sec) {
+  S.admSec = sec;
+  if (sec !== "msgs") S.admMsgs = null;
+  byId("admTitle").textContent = ADM_TITLES[sec]; byId("admBody").innerHTML = "";
+  openModal("admM");
+  call("adminData", [S.token], d => { S.adm = d; renderAdm(); }, "Загружаем настройки…");
+}
+function admReload() { call("adminData", [S.token], d => { S.adm = d; renderAdm(); }, "Обновляем…"); }
+function renderAdm() {
+  const d = S.adm, sec = S.admSec;
+  let h = "";
+  if (sec === "params") {
+    h = d.params.map((p, i) => '<label class="lbl">' + esc(p.key) + "</label>" +
+      (p.t === "list" ? '<select id="pa' + i + '">' + p.opts.map(o => '<option' + (o === p.val ? " selected" : "") + ">" + esc(o) + "</option>").join("") + "</select>"
+        : '<input id="pa' + i + '" ' + (p.t === "num" ? 'type="number" inputmode="decimal"' : "") + ' value="' + esc(p.val) + '">') +
+      (p.desc ? '<p class="muted small" style="margin:-6px 4px 12px;">' + esc(p.desc) + "</p>" : "")).join("") + btnH("Сохранить изменения", "admSaveParams()", "btn-main");
+  } else if (sec === "emps") {
+    h = btnH("+ Сотрудник", "admEmp(-1)", "btn-main") + d.emps.map((e, i) => '<div class="card tap" onclick="admEmp(' + i + ')"><div class="between"><b>' + esc(e.name) + '</b><span class="status' +
+      (e.status === "Активен" ? "" : " off") + '">' + esc(e.status) + '</span></div><div class="muted small">' + esc(e.role) + " · " + d.caps.filter(c => e.caps[c.key]).length + " из " + d.caps.length + " прав</div></div>").join("");
+  } else if (sec === "lists") {
+    const names = Object.keys(d.lists);
+    h = '<label class="lbl">Список</label><select id="lsSel" onchange="admListShow()">' + names.map(n => "<option>" + esc(n) + "</option>").join("") + '<option value="__disc">СКИДКИ</option></select>' +
+      '<p class="muted small" id="lsHint">Каждое значение — с новой строки.</p><textarea id="lsText" rows="10"></textarea>' + btnH("Сохранить список", "admSaveList()", "btn-main");
+  } else if (sec === "items") {
+    h = '<input type="search" id="itQ" placeholder="Поиск товара" oninput="admItems()"><div id="itList"></div>';
+  } else if (sec === "roles") {
+    const r0 = S.admRole || (d.lists["РОЛИ"] || [])[0] || "";
+    S.admRole = r0;
+    const tpl = (d.roleTpl || {})[r0] || [];
+    h = '<label class="lbl">Должность</label><select id="rtSel" onchange="S.admRole=this.value;renderAdm()">' + (d.lists["РОЛИ"] || []).map(n => '<option' + (n === r0 ? " selected" : "") + ">" + esc(n) + "</option>").join("") + "</select>" +
+      '<p class="muted small">Эти галочки получит новый сотрудник такой должности. У тех, кто уже заведён, галочки не меняются.</p>' +
+      d.caps.map(c => '<label class="opt"><input type="checkbox" id="rc_' + c.key + '"' + (tpl.indexOf(c.key) > -1 ? " checked" : "") + ">" + esc(c.name) + "</label>").join("") +
+      btnH("Сохранить шаблон", "admSaveRole()", "btn-main");
+  } else if (sec === "msgs") {
+    if (!S.admMsgs) S.admMsgs = Object.keys(d.msgTpl || {}).map(k => ({ key: k, text: (d.msgTpl || {})[k] }));
+    h = '<p class="muted small">Подстановки: {клиент} {номер} {дата} {сумма} {долг} {бонусы} {магазин}. Название шаблона можно менять, лишний — удалить.</p>' +
+      S.admMsgs.map((m, i) => '<div class="card" style="padding:10px;"><div class="row"><input id="mk' + i + '" value="' + esc(m.key) + '" placeholder="Название" style="margin:0;">' +
+        '<button class="x" style="flex:0 0 40px;" onclick="admMsgDel(' + i + ')" aria-label="Удалить">✕</button></div>' +
+        '<textarea id="mt' + i + '" rows="2" style="margin:8px 0 0;">' + esc(m.text) + "</textarea></div>").join("") +
+      btnGroup([btnH("+ Шаблон", "admMsgAdd()", "btn-out"), btnH("Сохранить шаблоны", "admSaveMsgs()", "btn-main")]);
+  } else if (sec === "tools") {
+    h = '<p class="muted small">Ночные задачи включаются один раз: каждую ночь около 3:00 — копия всей таблицы в папку «SAYCRM_Backups» и перенос закрытых заказов старше срока в архив.</p>' +
+      btnGroup([btnH("Резервная копия сейчас", "admTool('backup')", "btn-main"), btnH("Перенести в архив", "admTool('archive')", "btn-out"),
+        btnH("Включить ночные задачи", "admTool('nightly')", "btn-soft"), btnH("Проверить и починить базу", "admTool('setup')", "btn-soft")]);
+  }
+  byId("admBody").innerHTML = h;
+  if (sec === "lists") admListShow();
+  if (sec === "items") admItems();
+}
+function admSaveRole() {
+  const keys = S.adm.caps.filter(c => byId("rc_" + c.key).checked).map(c => c.key);
+  call("adminSaveRoleTemplate", [S.token, S.admRole, keys], r => { showMsg(r.msg); applyData(r); admReload(); }, "Сохраняем…");
+}
+function admMsgRead() { S.admMsgs = S.admMsgs.map((m, i) => ({ key: byId("mk" + i).value.trim(), text: byId("mt" + i).value.trim() })); }
+function admMsgAdd() { admMsgRead(); S.admMsgs.push({ key: "", text: "" }); renderAdm(); }
+function admMsgDel(i) { admMsgRead(); S.admMsgs.splice(i, 1); renderAdm(); }
+function admSaveMsgs() {
+  admMsgRead();
+  const list = S.admMsgs.filter(m => m.key && m.text);
+  if (!list.length) { showMsg("Нужен хотя бы один шаблон с названием и текстом.", true); return; }
+  const names = list.map(m => m.key.toLowerCase());
+  if (names.some((n, i) => names.indexOf(n) !== i)) { showMsg("Названия шаблонов повторяются.", true); return; }
+  call("adminSaveMsgTemplates", [S.token, list], r => { toast(r.msg); S.admMsgs = null; applyData(r); admReload(); }, "Сохраняем…");
+}
+function admSaveParams() {
+  const ch = S.adm.params.map((p, i) => ({ p: p, v: String(byId("pa" + i).value).trim() })).filter(x => x.v !== String(x.p.val));
+  if (!ch.length) { toast("Изменений нет"); return; }
+  closeModal("admM");
+  ch.forEach(x => enqueue({ label: "Параметр «" + x.p.key + "»", fn: "adminSaveParam", args: [S.token, x.p.key, x.v], ok: r => { toast(r.msg); applyData(r); } }));
+}
+function admEmp(i) {
+  const d = S.adm, e = i > -1 ? d.emps[i] : { name: "", pin: "", role: "", status: "Активен", caps: {} };
+  S.admEmpOrig = i > -1 ? e.name : "";
+  byId("admTitle").textContent = i > -1 ? e.name : "Новый сотрудник";
+  byId("admBody").innerHTML = '<label class="lbl">Имя</label><input id="emN" value="' + esc(e.name) + '"><label class="lbl">ПИН (4–8 цифр)</label><input id="emP" inputmode="numeric" value="' + esc(e.pin) + '">' +
+    '<div class="row"><div><label class="lbl">Должность</label><select id="emR" onchange="admRoleCaps()">' + optionsHtml(d.lists["РОЛИ"], "Выберите") + '</select></div><div><label class="lbl">Статус</label><select id="emS"><option>Активен</option><option>Отключен</option></select></div></div>' +
+    '<label class="lbl">Права</label>' + d.caps.map(c => '<label class="opt"><input type="checkbox" id="ec_' + c.key + '"' + (e.caps[c.key] ? " checked" : "") + ">" + esc(c.name) + "</label>").join("") +
+    '<p class="muted small">Администратору можно всё независимо от галочек.</p>' + btnGroup([btnH("Сохранить", "admSaveEmp()", "btn-main"), btnH("Назад", "renderAdm();byId('admTitle').textContent='Сотрудники'", "btn-soft")]);
+  byId("emR").value = e.role; byId("emS").value = e.status;
+}
+/** Новому сотруднику при выборе должности — галочки по умолчанию. */
+function admRoleCaps() {
+  if (S.admEmpOrig) return;
+  const def = { "Менеджер": ["order", "pay", "cancel", "stock", "allorders"], "Флорист": ["order", "build", "issue", "pay", "cancel", "stock", "income", "woff", "cost", "purchase", "inv", "vitrine", "allorders"], "Логист": ["issue", "pay", "cancel", "allorders"] }[byId("emR").value];
+  if (def) S.adm.caps.forEach(c => { byId("ec_" + c.key).checked = def.indexOf(c.key) > -1; });
+}
+function admSaveEmp() {
+  const e = { orig: S.admEmpOrig, name: byId("emN").value.trim(), pin: byId("emP").value.trim(), role: byId("emR").value, status: byId("emS").value, caps: {} };
+  S.adm.caps.forEach(c => { e.caps[c.key] = byId("ec_" + c.key).checked; });
+  if (!e.name || !/^\d{4,8}$/.test(e.pin) || !e.role) { showMsg("Заполните имя, ПИН (4–8 цифр) и должность.", true); return; }
+  call("adminSaveEmployee", [S.token, e], r => { toast(r.msg); applyData(r); admReload(); S.admSec = "emps"; byId("admTitle").textContent = "Сотрудники"; }, "Сохраняем…");
+}
+function admListShow() {
+  const n = byId("lsSel").value;
+  if (n === "__disc") { byId("lsHint").textContent = "Каждая скидка с новой строки: название; процент. Например: Постоянный клиент; 5"; byId("lsText").value = (S.adm.discounts || []).map(x => x.name + "; " + x.pct).join("\n"); }
+  else { byId("lsHint").textContent = "Каждое значение — с новой строки. То, что уже используется (например, категория с товарами), удалить нельзя."; byId("lsText").value = (S.adm.lists[n] || []).join("\n"); }
+}
+function admSaveList() {
+  const n = byId("lsSel").value, lines = byId("lsText").value.split("\n").map(x => x.trim()).filter(x => x);
+  if (n === "__disc") {
+    const pairs = lines.map(l => { const m = /^(.*?)[;:–—-]\s*([\d.,]+)\s*%?$/.exec(l); return m ? { name: m[1].trim(), pct: num(m[2]) } : { name: l, pct: 0 }; });
+    call("adminSaveDiscounts", [S.token, pairs], r => { toast(r.msg); applyData(r); admReload(); }, "Сохраняем…");
+  } else call("adminSaveList", [S.token, n, lines], r => { toast(r.msg); applyData(r); admReload(); }, "Сохраняем…");
+}
+function admItems() {
+  const q = (byId("itQ").value || "").trim().toLowerCase();
+  byId("itList").innerHTML = S.adm.items.filter(x => !q || x.name.toLowerCase().indexOf(q) > -1).map(x => '<div class="card tap" onclick="admItem(' + S.adm.items.indexOf(x) + ')"><div class="between"><b>' + esc(x.name) +
+    '</b><span class="status' + (x.status === "Активен" ? "" : " off") + '">' + esc(x.status) + '</span></div><div class="muted small">' + esc(x.cat) + " · своя цена: " + (x.own !== "" ? money(x.own) : "—") + " · минимум: " + (x.min !== "" ? fmt(x.min) : "—") + "</div></div>").join("");
+}
+function admItem(i) {
+  const x = S.adm.items[i];
+  byId("admTitle").textContent = x.name;
+  byId("admBody").innerHTML = '<label class="lbl">Категория</label><select id="itC">' + optionsHtml(S.adm.lists["КАТЕГОРИИ"].filter(c => c !== "Витрина"), "Выберите") + "</select>" +
+    '<label class="lbl">Статус (Отключен — не показывается в заказе)</label><select id="itS"><option>Активен</option><option>Отключен</option></select>' +
+    '<label class="lbl">Своя цена продажи (пусто — по коэффициенту)</label><input id="itO" type="number" inputmode="decimal" value="' + (x.own !== "" ? x.own : "") + '">' +
+    '<label class="lbl">Постоянный минимум (пусто — не задан)</label><input id="itM" type="number" inputmode="decimal" value="' + (x.min !== "" ? x.min : "") + '">' +
+    '<p class="muted small">Новые товары заводятся приходом на складе.</p>' + btnGroup([btnH("Сохранить", "admSaveItem(" + i + ")", "btn-main"), btnH("Назад", "S.admSec='items';byId('admTitle').textContent='Товары';renderAdm()", "btn-soft")]);
+  byId("itC").value = x.cat; byId("itS").value = x.status;
+}
+function admSaveItem(i) {
+  const x = S.adm.items[i], it = { name: x.name, cat: byId("itC").value, status: byId("itS").value, own: byId("itO").value.trim(), min: byId("itM").value.trim() };
+  call("adminSaveItem", [S.token, it], r => { toast(r.msg); applyData(r); S.admSec = "items"; byId("admTitle").textContent = "Товары"; admReload(); }, "Сохраняем…");
+}
+function admTool(t) {
+  const txt = { backup: "Сделать резервную копию всей таблицы?", archive: "Перенести закрытые заказы старше срока в архив?", nightly: "Включить ночные задачи (копия + архив каждую ночь)?", setup: "Проверить и починить базу? Данные не стираются." }[t];
+  askConfirm(txt, () => call("adminTool", [S.token, t], r => { showMsg(r.msg); applyData(r); }, "Выполняем…"), "Да");
+}
+
+// ---------- касса: пересчёт ----------
+function cashRecountUi() {
+  const bal = S.db.cash ? S.db.cash.balance : 0;
+  dialog({ title: "Пересчёт кассы", html: '<p class="muted small">По учёту: ' + money(bal) + '. Посчитайте наличные и впишите, сколько есть на самом деле.</p><input id="rcSum" type="number" inputmode="decimal" placeholder="Фактически в кассе"><input id="rcNote" placeholder="Комментарий (по желанию)">',
+    ok: "Записать", onOk: root => {
+      const v = root.querySelector("#rcSum").value.trim();
+      if (v === "" || num(v) < 0) { dlgError("Впишите сумму."); return false; }
+      return () => enqueue({ label: "Пересчёт кассы", fn: "cashRecount", args: [S.token, num(v), root.querySelector("#rcNote").value.trim(), uuid()], ok: r => { showMsg(r.msg); applyData(r); } });
+    } });
+}
+
+// ---------- рассылка ----------
+function openBroadcast() {
+  const keys = Object.keys(S.db.msgTpl || {});
+  byId("bcTpl").innerHTML = keys.map(k => '<option' + (k === "Бонусы" ? " selected" : "") + ">" + esc(k) + "</option>").join("");
+  bcText();
+  byId("bcList").innerHTML = "";
+  openModal("bcM");
+}
+function bcText() { byId("bcTxt").value = (S.db.msgTpl || {})[byId("bcTpl").value] || ""; }
+function bcFind() {
+  const f = { noOrderDays: num(byId("bcNo").value), memDays: num(byId("bcMem").value), minBonus: num(byId("bcB").value),
+    minOrders: num(byId("bcC").value), minTotal: num(byId("bcT").value), limit: 200 };
+  call("broadcastClients", [S.token, f], r => {
+    S.bc = r.list;
+    byId("bcList").innerHTML = '<div class="card"><h3>Подошли: ' + r.total + (r.total > r.list.length ? " (показаны " + r.list.length + ")" : "") + "</h3>" +
+      (r.list.length ? r.list.map((c, i) => '<div class="line" style="display:block;"><div class="between"><b>' + esc(c.name) + "</b><span>" + money(c.total) + "</span></div>" +
+        '<div class="muted small">' + esc(c.phone) + " · бонусов " + fmt(c.bonus) + " · заказов " + fmt(c.count) +
+        (c.daysSince !== "" ? " · не заказывал " + fmt(c.daysSince) + " дн." : "") + (c.memIn !== "" ? " · дата через " + fmt(c.memIn) + " дн." : "") + "</div>" +
+        btnGroup([btnH("WhatsApp", "bcSend(" + i + ",'wa')", "btn-soft"), btnH("Telegram", "bcSend(" + i + ",'tg')", "btn-soft")]) + "</div>").join("")
+        : '<p class="muted">Никто не подошёл — смягчите условия.</p>') + "</div>";
+  }, "Подбираем клиентов…");
+}
+function bcMsg(c) {
+  return byId("bcTxt").value.replace(/\{клиент\}/g, c.name).replace(/\{бонусы\}/g, fmt(c.bonus)).replace(/\{магазин\}/g, S.db.cfg.shop || "")
+    .replace(/\{сумма\}/g, money(c.total)).replace(/\{дата\}/g, c.last || "").replace(/\{номер\}/g, "").replace(/\{долг\}/g, "");
+}
+function bcSend(i, m) {
+  const c = S.bc[i]; if (!c) return;
+  const txt = bcMsg(c), digits = c.phone.replace(/\D/g, "");
+  if (m === "wa") window.open("https://wa.me/" + digits + "?text=" + encodeURIComponent(txt), "_blank");
+  else window.open("https://t.me/share/url?url=&text=" + encodeURIComponent(txt), "_blank");
+}
+function bcCopyText() { copyText(byId("bcTxt").value); toast("Текст скопирован"); }
+function bcCopyPhones() {
+  if (!S.bc || !S.bc.length) { showMsg("Сначала подберите клиентов.", true); return; }
+  copyText(S.bc.map(c => c.phone).join("\n"));
+  toast("Скопировано номеров: " + S.bc.length);
+}
+
+// ---------- клиенты ----------
+function openClients() { byId("clQ").value = ""; openModal("clM"); clSearch(); }
+let clTimer = null;
+function clSearchSoon() { clearTimeout(clTimer); clTimer = setTimeout(clSearch, 500); }
+function clSearch() {
+  call("getClients", [S.token, byId("clQ").value.trim()], r => {
+    S.clList = r.list;
+    byId("clList").innerHTML = '<p class="muted small">Найдено: ' + r.total + (r.total > r.list.length ? ", показаны первые " + r.list.length : "") + "</p>" + r.list.map((c, i) =>
+      '<div class="card tap" onclick="openClient(' + i + ')"><div class="between"><b>' + esc(c.name) + "</b><span>" + money(c.total) + '</span></div><div class="muted small">' + esc(c.phone) +
+      " · заказов " + fmt(c.count) + " · бонусов " + fmt(c.bonus) + (c.last ? " · был " + esc(c.last) : "") + "</div></div>").join("");
+  }, "Ищем…");
+}
+function openClient(i) {
+  const c = S.clList[i]; if (!c) return;
+  call("getClient", [S.token, c.phone], d => {
+    S.cl = d;
+    byId("ccTitle").textContent = d.name;
+    let h = '<div class="card">' + kv("Телефон", esc(d.phone)) + kv("Бонусов", fmt(d.bonus)) + kv("Покупок на", money(d.total)) + kv("Заказов", fmt(d.count)) + kv("Средний чек", money(d.avg)) + kv("Последний заказ", esc(d.last)) + "</div>";
+    if (d.phone) h += btnGroup([btnH("Написать про бонусы", "writeClientBonus()", "btn-main")]);
+    if (can("order")) h += '<div class="card"><h3>Данные</h3><label class="lbl">Имя</label><input id="ccN" value="' + esc(d.name) + '"><div class="row"><div><label class="lbl">Памятная дата</label><input id="ccM1" maxlength="5" value="' + esc(d.mem1) +
+      '"></div><div><label class="lbl">Ещё одна</label><input id="ccM2" maxlength="5" value="' + esc(d.mem2) + '"></div></div>' + btnH("Сохранить", "saveClientUi()", "btn-main") + "</div>";
+    h += '<div class="card"><h3>Заказы (' + d.orders.length + ")</h3>" + (d.orders.length ? d.orders.map(o => '<div class="line" style="display:block;' + (findOrder(o.id) ? "cursor:pointer;" : "") + '"' + (findOrder(o.id) ? ' onclick="openCard(\'' + esc(o.id) + '\')"' : "") +
+      '><div class="between"><b>#' + esc(o.id) + "</b><span>" + money(o.fact) + '</span></div><div class="muted small">' + esc(o.date) + " · " + esc(o.status) + (o.debt > 0 ? ' · <span class="pay">долг ' + money(o.debt) + "</span>" : "") + "<br>" + esc(o.desc).replace(/\n/g, ", ") + "</div></div>").join("") : '<p class="muted">Нет.</p>') + "</div>";
+    if (d.bonusHist.length) h += '<div class="card"><h3>Бонусы</h3>' + d.bonusHist.map(b => kv(b.time + " · " + b.op, (b.sum > 0 ? "+" : "") + fmt(b.sum) + " → " + fmt(b.bal))).join("") + "</div>";
+    byId("ccBody").innerHTML = h;
+    openModal("ccM");
+  }, "Открываем клиента…");
+}
+function saveClientUi() {
+  const m1 = byId("ccM1").value.trim(), m2 = byId("ccM2").value.trim();
+  if (!dmOk(m1) || !dmOk(m2)) { showMsg("Памятная дата — ДД.ММ, например 15.05.", true); return; }
+  call("saveClient", [S.token, S.cl.phone, { name: byId("ccN").value.trim(), mem1: m1, mem2: m2 }], r => { toast(r.msg); byId("ccTitle").textContent = byId("ccN").value.trim(); }, "Сохраняем…");
+}
+
+// ---------- прайсы ----------
+function openPrices() { switchTab("tPr", "nPr"); renderPrices(); }
+function renderPrices() {
+  if (!S.user || !(can("price") || can("order"))) return;
+  byId("prBtns").innerHTML = can("price") ? btnH("+ Позиция прайса", "prEdit(-1)", "btn-main") : "";
+  let L = S.db.prices || [];
+  if (!byId("prItem").options.length || byId("prItem").dataset.n !== String(S.db.stock.length)) {
+    byId("prItem").innerHTML = '<option value="">Любой состав</option>' + S.db.stock.filter(x => x.cat !== VIT).map(x => '<option value="' + esc(x.name) + '">' + esc(x.name) + "</option>").join("");
+    byId("prItem").dataset.n = String(S.db.stock.length);
+  }
+  const fI = byId("prItem").value, fMin = num(byId("prMin").value), fMax = num(byId("prMax").value), fFlw = num(byId("prFlw").value);
+  const flowers = p => p.items.reduce((a, x) => a + ((stockOf(x.name) || {}).cat === "Цветы" ? x.qty : 0), 0);
+  L = L.filter(p => (!fI || p.items.some(x => x.name === fI)) && (!fMin || p.price >= fMin) && (!fMax || p.price <= fMax) && (!fFlw || flowers(p) >= fFlw));
+  byId("prList").innerHTML = L.length ? '<div class="grid3">' + L.map((p, i) => '<div class="pcard"><b>' + esc(p.name) + '</b><span class="p">' + money(p.price) + "</span>" +
+    (p.desc ? '<div class="muted small">' + esc(p.desc) + "</div>" : "") +
+    '<div class="muted small">' + (p.items.length ? p.items.map(x => esc(x.name) + "×" + fmt(x.qty)).join(", ") : "состав не задан") + "</div>" +
+    (can("order") && p.items.length ? btnH("В заказ", "priceToOrder(" + i + ")", "btn-main") : "") +
+    (can("price") ? btnH("Изменить", "prEdit(" + i + ")", "btn-soft") : "") + "</div>").join("") + "</div>"
+    : '<p class="muted" style="text-align:center;">Ничего не подошло — сбросьте фильтры.</p>';
+}
+function prEdit(i) {
+  const p = i > -1 ? S.db.prices[i] : { name: "", price: "", desc: "", items: [], status: "Активен" };
+  S.pr = { orig: i > -1 ? p.name : "", items: p.items.map(x => ({ name: x.name, qty: x.qty })) };
+  byId("prList").innerHTML = '<div class="card"><label class="lbl">Название</label><input id="pnN" value="' + esc(p.name) + '">' +
+    '<label class="lbl">Цена продажи</label><input id="pnP" type="number" inputmode="decimal" value="' + (p.price || "") + '">' +
+    '<label class="lbl">Описание</label><input id="pnD" value="' + esc(p.desc) + '">' +
+    '<label class="lbl">Состав (спишется со склада при сборке)</label><div class="row"><select id="pnSel" style="margin:0;">' +
+    '<option value="">Выберите товар</option>' + S.db.stock.filter(x => x.active).map(x => '<option value="' + esc(x.name) + '">' + esc(x.name) + " — " + money(x.rrp) + "</option>").join("") +
+    '</select><input id="pnQ" type="number" inputmode="decimal" placeholder="Кол-во" style="margin:0;flex:0 0 90px;"></div>' +
+    btnH("+ в состав", "prAdd()", "btn-out") + '<div id="pnLines"></div><p class="muted small" id="pnSum"></p>' +
+    '<label class="lbl">Статус</label><select id="pnS"><option>Активен</option><option>Отключен</option></select>' +
+    btnGroup([btnH("Сохранить", "prSave()", "btn-main"), btnH("Назад", "renderPrices()", "btn-soft")]) + "</div>";
+  byId("pnS").value = p.status;
+  byId("prBtns").innerHTML = "";
+  prLines();
+}
+function prAdd() {
+  const n = byId("pnSel").value, q = num(byId("pnQ").value);
+  if (!n) { showMsg("Выберите товар.", true); return; }
+  if (q <= 0) { showMsg("Укажите количество.", true); return; }
+  const ex = S.pr.items.find(x => x.name === n);
+  if (ex) ex.qty = Math.round((ex.qty + q) * 100) / 100; else S.pr.items.push({ name: n, qty: q });
+  byId("pnSel").value = ""; byId("pnQ").value = ""; prLines();
+}
+function prDel(i) { S.pr.items.splice(i, 1); prLines(); }
+function prLines() {
+  byId("pnLines").innerHTML = S.pr.items.map((x, i) => '<div class="line"><span>' + esc(x.name) + " × " + fmt(x.qty) + '</span><button class="x" onclick="prDel(' + i + ')" aria-label="Убрать">✕</button></div>').join("");
+  const sum = S.pr.items.reduce((a, x) => a + x.qty * ((stockOf(x.name) || {}).rrp || 0), 0);
+  byId("pnSum").textContent = S.pr.items.length ? "Состав по РРЦ: " + money(sum) + " — цену в прайсе можно поставить любую" : "";
+}
+function prSave() {
+  const p = { orig: S.pr.orig, name: byId("pnN").value.trim(), price: num(byId("pnP").value), desc: byId("pnD").value.trim(), items: S.pr.items, status: byId("pnS").value };
+  if (!p.name || p.price <= 0) { showMsg("Введите название и цену.", true); return; }
+  call("savePrice", [S.token, p], r => { toast(r.msg); applyData(r, () => renderPrices()); }, "Сохраняем…");
+}
+/** Заказ по позиции прайса: состав в корзину, цена из прайса. */
+function priceToOrder(i) {
+  const p = S.db.prices[i]; if (!p || !p.items.length) { showMsg("У позиции не задан состав — добавьте его или соберите заказ вручную.", true); return; }
+  resetOrderForm(); openOrderForm();
+  S.cart = p.items.map(x => ({ name: x.name, qty: x.qty, price: (stockOf(x.name) || {}).rrp || 0 }));
+  renderCart();
+  byId("oFact").value = p.price; S.factTouched = true; updDebt();
+  byId("oCom").value = "По прайсу: " + p.name;
+  toast("«" + p.name + "» — цена " + money(p.price));
+}
+
+// ---------- поиск в архиве ----------
+let findTimer = null;
+/** Ищем сразу везде: в загруженных заказах и в архиве (по тексту и по выбранной дате). */
+function findEverywhere() {
+  clearTimeout(findTimer);
+  const q = (S.q || "").trim(), date = S.filter === "date" ? S.date : "";
+  if (q.length < 3 && !date) { if (S.archFound && S.archFound.length) { S.archFound = []; renderOrders(); } return; }
+  const key = q + "|" + date;
+  if (key === S.archKey) return;
+  findTimer = setTimeout(() => {
+    S.archKey = key;
+    srv("searchOrders", [S.token, q, date], r => { S.archFound = (r.list || []).filter(o => o.archived); renderOrders(); }, () => {});
+  }, 700);
+}
+function openArch(i) {
+  const o = S.arch[i]; if (!o) return;
+  closeDlg();
+  if (findOrder(o.id)) { openCard(o.id); return; }
+  byId("arTitle").textContent = "Заказ #" + o.id + (o.archived ? " (архив)" : "");
+  byId("arBody").innerHTML = '<p><span class="' + stClass(o.status) + '">' + esc(o.status) + "</span></p>" +
+    kv("Выдача", esc(o.date)) + kv("Клиент", esc(o.client) + (o.phone ? "<br>" + esc(o.phone) : "")) + kv("Получатель", esc(o.recipient)) +
+    kv("Состав", esc(o.desc).replace(/\n/g, "<br>")) + kv("Цена продажи", money(o.fact)) + kv("Оплачено", money(o.paid)) + kv("Долг", money(o.debt)) +
+    (o.costFact ? kv("Себестоимость", money(o.costFact)) + kv("Маржа", money(o.margin)) : "") + kv("Причина", esc(o.reason)) +
+    (o.comments ? '<div class="pre">' + esc(o.comments) + "</div>" : "");
+  openModal("arM");
+}
+
+// ---------- печать ----------
+/** Печатает переданный HTML: скрытая рамка, обычный принтер. */
+function printHtml(title, body) {
+  const css = "body{font-family:Arial,sans-serif;color:#000;margin:0;padding:14px;font-size:13px}" +
+    "h1{font-size:17px;margin:0 0 4px}h2{font-size:14px;margin:12px 0 4px}table{width:100%;border-collapse:collapse}" +
+    "td,th{padding:4px 2px;border-bottom:1px solid #ddd;text-align:left;font-size:12px}td.r,th.r{text-align:right}" +
+    ".mut{color:#666;font-size:11px}.tot{font-size:15px;font-weight:700;margin-top:8px}" +
+    ".tag{display:inline-block;width:32%;border:1px solid #bbb;border-radius:6px;margin:0 1% 8px 0;padding:8px;text-align:center;box-sizing:border-box}" +
+    ".tag b{display:block;font-size:13px;margin-bottom:4px}.tag span{font-size:18px;font-weight:700}";
+  const html = "<html><head><meta charset='utf-8'><title>" + esc(title) + "</title><style>" + css + "</style></head><body>" + body + "</body></html>";
+  const f = document.createElement("iframe");
+  f.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
+  document.body.appendChild(f);
+  const d = f.contentWindow.document;
+  d.open(); d.write(html); d.close();
+  setTimeout(() => {
+    try { f.contentWindow.focus(); f.contentWindow.print(); }
+    catch (e) { byId("printArea").innerHTML = html; window.print(); }   // запасной путь
+    setTimeout(() => { f.remove(); byId("printArea").innerHTML = ""; }, 1000);
+  }, 250);
+}
+function shopName() { return esc(S.db.cfg.shop || "SAYCRM"); }
+function printReceipt(id) {
+  const o = findOrder(id) || (S.arch || []).find(x => x.id === id); if (!o) return;
+  const rows = o.items.map(i => "<tr><td>" + esc(i.name) + '</td><td class="r">' + fmt(i.qty) + '</td><td class="r">' + money(i.price) + '</td><td class="r">' + money(i.qty * i.price) + "</td></tr>").join("");
+  const pays = (o.pays || []).map(p => "<div>" + esc(p.method) + " — " + money(p.sum) + "</div>").join("");
+  printHtml("Чек " + o.id, "<h1>" + shopName() + "</h1><div class='mut'>Товарный чек к заказу №" + esc(o.id) + " от " + esc(o.created || o.date) + "</div>" +
+    "<h2>Состав</h2><table><tr><th>Наименование</th><th class='r'>Кол-во</th><th class='r'>Цена</th><th class='r'>Сумма</th></tr>" + rows + "</table>" +
+    "<div class='tot'>Итого: " + money(o.fact) + "</div>" + (o.discount ? "<div class='mut'>Скидка: " + esc(o.discount) + "</div>" : "") +
+    (o.bonusUsed ? "<div class='mut'>Оплачено бонусами: " + fmt(o.bonusUsed) + "</div>" : "") +
+    "<h2>Оплата</h2>" + (pays || "<div class='mut'>не оплачен</div>") + (o.debt > 0 ? "<div class='tot'>К доплате: " + money(o.debt) + "</div>" : "") +
+    "<p class='mut'>Товарный чек не является фискальным документом.</p>");
+}
+function printAssembly(id) {
+  const o = findOrder(id); if (!o) return;
+  const rows = o.items.map(i => "<tr><td>" + esc(i.name) + '</td><td class="r">' + fmt(i.qty) + "</td></tr>").join("");
+  printHtml("Сборка " + o.id, "<h1>Заказ №" + esc(o.id) + "</h1><div class='mut'>" + shopName() + " · выдача " + esc(o.date) + " · " + esc(o.dlvType || "") + "</div>" +
+    "<h2>Состав</h2><table>" + rows + "</table>" +
+    "<h2>Получатель</h2><div>" + esc(o.recipient || "—") + "</div>" + (o.addr ? "<div>" + esc(o.addr) + "</div>" : "") +
+    "<h2>Клиент</h2><div>" + esc(o.client) + " " + esc(o.phone) + "</div>" +
+    (o.comments ? "<h2>Комментарии</h2><div class='mut' style='white-space:pre-wrap'>" + esc(o.comments) + "</div>" : "") +
+    (o.debt > 0 ? "<div class='tot'>Взять с клиента: " + money(o.debt) + "</div>" : "<div class='mut'>Оплачен полностью</div>"));
+}
+function printTags() {
+  const list = S.db.stock.filter(i => i.active && i.phys > 0);
+  if (!list.length) { showMsg("Нет товаров с остатком.", true); return; }
+  dialog({ title: "Ценники", ok: "Печать", html: '<p class="muted small">Отметьте, на что печатать ценники.</p>' +
+    list.map((i, k) => '<label class="opt"><input type="checkbox" id="tg' + k + '" checked>' + esc(i.name) + " — " + money(i.rrp) + "</label>").join(""),
+    onOk: () => () => {
+      const sel = list.filter((i, k) => byId("tg" + k) && byId("tg" + k).checked);
+      if (!sel.length) { showMsg("Ничего не выбрано.", true); return; }
+      printHtml("Ценники", "<h1>" + shopName() + "</h1>" + sel.map(i => "<div class='tag'><b>" + esc(i.name) + "</b><span>" + money(i.rrp) + "</span></div>").join(""));
+    } });
+}
+
+// ---------- написать клиенту ----------
+function msgText(o, key) {
+  const t = (S.db.msgTpl || {})[key] || "";
+  return t.replace(/\{клиент\}/g, o.client || "").replace(/\{номер\}/g, o.id || "").replace(/\{дата\}/g, o.date || "")
+    .replace(/\{сумма\}/g, money(o.fact || 0)).replace(/\{долг\}/g, money(o.debt || 0))
+    .replace(/\{бонусы\}/g, fmt(o.bonus || 0)).replace(/\{магазин\}/g, S.db.cfg.shop || "");
+}
+function writeClient(id) {
+  const o = findOrder(id); if (!o || !o.phone) return;
+  msgDialog(o, o.status);
+}
+/** Сообщение клиенту из карточки клиента: баланс бонусов, памятная дата. */
+function writeClientBonus() {
+  const c = S.cl; if (!c || !c.phone) return;
+  msgDialog({ client: c.name, phone: c.phone, bonus: c.bonus, id: "", date: c.last, fact: c.total, debt: 0 }, "Бонусы");
+}
+function msgDialog(o, prefer) {
+  const keys = Object.keys(S.db.msgTpl || {});
+  const def = keys.indexOf(prefer) > -1 ? prefer : (keys[0] || "");
+  S.msgCtx = o;
+  dialog({ title: "Написать клиенту", ok: "Открыть", html: '<p class="muted small">' + esc(o.client) + " · " + esc(o.phone) + "</p>" +
+    '<label class="lbl">Мессенджер</label><select id="wcM"><option value="wa">WhatsApp</option><option value="tg">Telegram</option><option value="max">MAX</option></select>' +
+    '<label class="lbl">Шаблон</label><select id="wcT" onchange="wcFill()">' + keys.map(k => '<option value="' + esc(k) + '"' + (k === def ? " selected" : "") + ">" + esc(k) + "</option>").join("") + "</select>" +
+    '<textarea id="wcTxt" rows="4">' + esc(msgText(o, def)) + "</textarea>" +
+    '<p class="muted small">Текст шаблонов меняется в «Админ» → «Шаблоны сообщений».</p>',
+    onOk: root => {
+      const m = root.querySelector("#wcM").value, txt = root.querySelector("#wcTxt").value.trim();
+      const digits = o.phone.replace(/\D/g, "");
+      return () => {
+        if (m === "wa") window.open("https://wa.me/" + digits + "?text=" + encodeURIComponent(txt), "_blank");
+        else if (m === "tg") window.open("https://t.me/share/url?url=&text=" + encodeURIComponent(txt), "_blank");
+        else { copyText(txt); window.open("https://max.ru/", "_blank"); toast("Текст скопирован — вставьте в чат MAX"); }
+      };
+    } });
+}
+function wcFill() { if (S.msgCtx) byId("wcTxt").value = msgText(S.msgCtx, byId("wcT").value); }
+function copyText(t) {
+  try { if (navigator.clipboard) { navigator.clipboard.writeText(t); return; } } catch (e) {}
+  const ta = document.createElement("textarea"); ta.value = t; document.body.appendChild(ta); ta.select();
+  try { document.execCommand("copy"); } catch (e) {}
+  ta.remove();
+}
+
+// ---------- закупка ----------
+function buyRows() {
+  return S.db.stock.filter(i => i.cat !== VIT).map(i => {
+    const min = i.min !== "" && i.min != null ? num(i.min) : 0;
+    return { name: i.name, phys: i.phys, res: i.res, min: min, buy: Math.max(0, Math.round((min + i.res - i.phys) * 100) / 100) };
+  }).filter(x => x.buy > 0);
+}
+function openPurchase() {
+  const L = buyRows();
+  byId("buyList").innerHTML = L.length ? '<div class="card"><table class="tbl"><tr><th>Товар</th><th class="r">Есть</th><th class="r">В заказах</th><th class="r">Мин.</th><th class="r">Купить</th></tr>' +
+    L.map(x => "<tr><td>" + esc(x.name) + '</td><td class="r">' + fmt(x.phys) + '</td><td class="r">' + fmt(x.res) + '</td><td class="r">' + fmt(x.min) + '</td><td class="r"><b>' + fmt(x.buy) + "</b></td></tr>").join("") + "</table></div>"
+    : '<p class="muted">Докупать ничего не нужно.</p>';
+  openModal("buyM");
+}
+function buyText() { return "Закупка " + S.db.cfg.today + ":\n" + buyRows().map(x => "• " + x.name + " — " + fmt(x.buy)).join("\n"); }
+function buyCopy() {
+  const t = buyText(), ta = byId("buyText");
+  const fallback = () => { ta.style.display = "block"; ta.value = t; ta.focus(); ta.select(); try { document.execCommand("copy"); toast("Список скопирован"); } catch (e) { toast("Выделите текст и скопируйте"); } };
+  try { if (navigator.clipboard) navigator.clipboard.writeText(t).then(() => toast("Список скопирован"), fallback); else fallback(); } catch (e) { fallback(); }
+}
+function buyToIncome() {
+  const L = buyRows();
+  if (!L.length) { showMsg("Список закупки пуст.", true); return; }
+  S.inc = L.map(x => ({ name: x.name, isNew: false, cat: "", qty: "", price: "", own: 0 }));
+  closeModal("buyM"); openIncome();
+  toast("Названия подставлены — впишите количество и цены");
+}
+
+// ---------- инвентаризация ----------
+function openInventory() {
+  S.invSnap = {}; S.invVal = {};
+  S.db.stock.filter(i => i.cat !== VIT).forEach(i => { S.invSnap[i.name] = i.phys; });
+  byId("invQ").value = ""; renderInv(); openModal("invM");
+}
+function renderInv() {
+  const q = byId("invQ").value.trim().toLowerCase();
+  byId("invList").innerHTML = Object.keys(S.invSnap).filter(n => !q || n.toLowerCase().indexOf(q) > -1).map(n =>
+    '<div class="line"><span>' + esc(n) + '<br><span class="muted small">по учёту: ' + fmt(S.invSnap[n]) + '</span></span><input type="number" inputmode="decimal" style="margin:0;width:110px;" placeholder="посчитано" value="' +
+    (S.invVal[n] != null ? S.invVal[n] : "") + '" oninput="invSetV(' + Object.keys(S.invSnap).indexOf(n) + ',this.value)"></div>').join("");
+}
+function invSetV(ix, v) { S.invVal[Object.keys(S.invSnap)[ix]] = v; }
+function invSave() {
+  const lines = Object.keys(S.invVal).filter(n => String(S.invVal[n]).trim() !== "").map(n => ({ name: n, counted: num(S.invVal[n]), expected: S.invSnap[n] }));
+  if (!lines.length) { showMsg("Не введено ни одного количества.", true); return; }
+  const diff = lines.filter(l => l.counted !== l.expected).length;
+  askConfirm("Провести инвентаризацию: посчитано " + lines.length + ", с расхождением " + diff + "?", () => {
+    closeModal("invM");
+    enqueue({ label: "Инвентаризация", fn: "inventory", args: [S.token, lines, uuid()], ok: r => { showMsg(r.msg); applyData(r); },
+      fail: m => { dialog({ title: "Инвентаризация не проведена", html: '<p style="white-space:pre-wrap;">' + esc(m) + "</p>", ok: "Понятно", cancel: false }); return true; } });
+  }, "Провести");
+}
+
+// ---------- витрина ----------
+function openVit() { renderVit(); openModal("vitM"); }
+function renderVit() {
+  if (!S.user || !(can("vitrine") || can("order"))) return;
+  const L = S.db.stock.filter(i => i.cat === VIT && i.phys > 0);
+  byId("listV").innerHTML = L.length ? L.map(i => '<div class="card"><div class="between"><b>' + esc(i.name) + "</b><b>" + money(i.rrp) + "</b></div>" +
+    '<div class="muted small" style="margin:4px 0 8px;">' + (i.comp || []).map(c => esc(c.name) + " ×" + fmt(c.qty)).join(", ") + (can("cost") ? " · себест. " + money(i.cost) : "") +
+    " · на витрине: " + fmt(i.av) + (i.res ? " (ещё " + fmt(i.res) + " в заказах)" : "") + "</div>" +
+    btnGroup([can("order") && can("pay") && i.av > 0 && btnH("Продать сейчас", "openVitSell(" + S.db.stock.indexOf(i) + ")", "btn-main"),
+      can("order") && i.av > 0 && btnH("В заказ", "vitToOrder(" + S.db.stock.indexOf(i) + ")", "btn-out"),
+      can("vitrine") && i.av > 0 && btnH("Разобрать", "openVitDis(" + S.db.stock.indexOf(i) + ")", "btn-soft")]) + "</div>").join("")
+    : '<p class="muted" style="text-align:center;">На витрине пусто.</p>';
+}
+/** Букет с витрины — в обычную форму заказа (доставка, предоплата, оплата при получении). */
+function vitToOrder(ix) {
+  const it = S.db.stock[ix]; if (!it) return;
+  closeModal("vitM");
+  resetOrderForm(); openOrderForm();
+  S.cart = [{ name: it.name, qty: 1, price: it.rrp }];
+  renderCart();
+  toast("Букет «" + it.name + "» в заказе — заказ сразу будет «Собран»");
+}
+function openVitBuild() {
+  S.vb = [];
+  byId("vbSel").innerHTML = '<option value="">Выберите товар</option>' + S.db.stock.filter(i => i.cat !== VIT && i.av > 0).map(i =>
+    '<option value="' + esc(i.name) + '">' + esc(i.name) + " (свободно " + fmt(i.av) + ")</option>").join("");
+  ["vbName", "vbQty", "vbPrice"].forEach(x => { byId(x).value = ""; }); byId("vbCount").value = 1;
+  vbRender(); openModal("vbM");
+}
+function vbAdd() {
+  const n = byId("vbSel").value, q = num(byId("vbQty").value);
+  if (!n) { showMsg("Выберите товар.", true); return; }
+  if (q <= 0) { showMsg("Укажите количество.", true); return; }
+  const ex = S.vb.find(x => x.name === n); if (ex) ex.qty += q; else S.vb.push({ name: n, qty: q });
+  byId("vbSel").value = ""; byId("vbQty").value = ""; vbRender();
+}
+function vbDel(i) { S.vb.splice(i, 1); vbRender(); }
+function vbRender() {
+  const cnt = Math.max(1, Math.round(num(byId("vbCount").value) || 1));
+  byId("vbLines").innerHTML = S.vb.map((x, i) => '<div class="line"><span>' + esc(x.name) + " × " + fmt(x.qty) + '</span><button class="x" onclick="vbDel(' + i + ')" aria-label="Убрать">✕</button></div>').join("");
+  const rrp = S.vb.reduce((a, x) => a + x.qty * (stockOf(x.name) || {}).rrp, 0), cost = S.vb.reduce((a, x) => a + x.qty * ((stockOf(x.name) || {}).cost || 0), 0);
+  const short = S.vb.filter(x => x.qty * cnt > (stockOf(x.name) || { av: 0 }).av).map(x => x.name);
+  byId("vbInfo").innerHTML = S.vb.length ? "РРЦ состава: " + money(rrp) + (can("cost") ? " · себестоимость ≈ " + money(cost) : "") + (short.length ? '<br><span class="err">Не хватает: ' + esc(short.join(", ")) + "</span>" : "") : "";
+}
+function vbSave() {
+  const name = byId("vbName").value.trim(), cnt = Math.max(1, Math.round(num(byId("vbCount").value) || 1));
+  if (!name) { showMsg("Дайте букету название.", true); return; }
+  if (!S.vb.length) { showMsg("Добавьте товары в букет.", true); return; }
+  const d = { name: name, items: S.vb.slice(), count: cnt, price: byId("vbPrice").value.trim() === "" ? "" : num(byId("vbPrice").value), requestId: uuid() };
+  closeModal("vbM");
+  enqueue({ label: "Витрина «" + name + "»", fn: "buildVitrine", args: [S.token, d], ok: r => { toast(r.msg); applyData(r); },
+    fail: m => { dialog({ title: "Букет не собран", html: "<p>" + esc(m) + "</p>", ok: "Вернуться", cancel: "Закрыть", onOk: () => () => { openModal("vbM"); } }); return true; } });
+}
+function openVitDis(ix) {
+  const it = S.db.stock[ix]; if (!it) return;
+  const name = it.name;
+  S.vd = { name: name, lines: (it.comp || []).map(c => ({ name: c.name, qty: c.qty, max: c.qty })) };
+  byId("vdTitle").textContent = "Разобрать «" + name + "»"; byId("vdReason").value = "";
+  vdRender(); openModal("vdM");
+}
+function vdRender() {
+  byId("vdLines").innerHTML = S.vd.lines.map((c, i) => '<div class="line"><span>' + esc(c.name) + '<br><span class="muted small">в букете ' + fmt(c.max) + ", вернётся " + fmt(c.max - c.qty) + '</span></span><span style="white-space:nowrap;">' +
+    '<button class="btn-soft" style="width:auto;margin:0;padding:4px 10px;" onclick="vdQty(' + i + ',-1)">−</button> <b>' + fmt(c.qty) + '</b> <button class="btn-soft" style="width:auto;margin:0;padding:4px 10px;" onclick="vdQty(' + i + ',1)">+</button>' +
+    '<button class="x" onclick="vdQty(' + i + ',-9999)" aria-label="Вернуть всё">✕</button></span></div>').join("") +
+    '<p class="muted small">Списать: ' + S.vd.lines.filter(c => c.qty > 0).map(c => esc(c.name) + " ×" + fmt(c.qty)).join(", ") + "</p>";
+}
+function vdQty(i, d) { const c = S.vd.lines[i]; c.qty = Math.min(c.max, Math.max(0, c.qty + d)); vdRender(); }
+function vdSave() {
+  const reason = byId("vdReason").value.trim();
+  if (!reason) { showMsg("Укажите причину.", true); return; }
+  const name = S.vd.name, woff = S.vd.lines.map(c => ({ name: c.name, qty: c.qty }));
+  askConfirm("Разобрать один букет «" + name + "»? Это нельзя отменить.", () => {
+    closeModal("vdM");
+    enqueue({ label: "Разбор «" + name + "»", fn: "disassembleVitrine", args: [S.token, name, woff, reason], ok: r => { toast(r.msg); applyData(r); } });
+  }, "Разобрать", true);
+}
+function openVitSell(ix) {
+  const it = S.db.stock[ix]; if (!it) return;
+  const name = it.name;
+  S.vs = name; byId("vsTitle").textContent = "Продать «" + name + "»";
+  byId("vsPhone").value = ""; byId("vsName").value = ""; byId("vsPrice").value = it.rrp;
+  byId("vsPriceLbl").textContent = "Цена продажи (РРЦ " + money(it.rrp) + ")";
+  openModal("vsM");
+}
+function vsSave() {
+  const name = S.vs, price = num(byId("vsPrice").value), rawP = byId("vsPhone").value.trim(), phone = normPhone(rawP);
+  if (price <= 0) { showMsg("Укажите цену.", true); return; }
+  if (rawP && !phoneOk(phone)) { showMsg("Проверьте телефон: " + phone, true); return; }
+  payDialog({ id: "витрина", debt: price, status: "" }, true, pays => {
+    closeModal("vsM");
+    enqueue({ label: "Продажа «" + name + "»", fn: "sellNow", args: [S.token, { items: [{ name: name, qty: 1 }], fact: price, pays: pays, phone: phone, clientName: byId("vsName").value.trim(), requestId: uuid() }],
+      ok: r => { haptic("success"); showMsg(r.msg); applyData(r); } });
+  });
+}
+
+// ---------- приход ----------
+function openIncome() {
+  byId("iSel").innerHTML = '<option value="">Выберите товар</option><option value="__new__">+ Новый товар…</option>' +
+    S.db.stock.map(i => '<option value="' + esc(i.name) + '">' + esc(i.name) + (i.av < 0 ? " (не хватает " + fmt(-i.av) + ")" : "") + "</option>").join("");
+  byId("iNewCat").innerHTML = optionsHtml(S.db.lists.cats || [], "Выберите категорию");
+  onIncSel(); renderInc(); openModal("incM");
+}
+function onIncSel() { byId("iNewBox").style.display = byId("iSel").value === "__new__" ? "block" : "none"; incHint(); }
+function incHint() {
+  const q = num(byId("iQty").value), p = num(byId("iPrice").value);
+  byId("iHint").textContent = p > 0 ? "Сумма строки: " + money(q * p) + " · РРЦ по коэффициенту ≈ " + money(p * num(S.db.cfg.coef)) + " (после пересчёта средней себестоимости может отличаться)" : "";
+}
+function addIncLine() {
+  const v = byId("iSel").value, isNew = v === "__new__";
+  const name = isNew ? byId("iNewName").value.trim().replace(/\s+/g, " ") : v;
+  const qRaw = byId("iQty").value, pRaw = byId("iPrice").value;
+  const cat = isNew ? byId("iNewCat").value : "", own = isNew ? num(byId("iNewOwn").value) : 0;
+  if (!name) { showMsg(isNew ? "Введите название нового товара." : "Выберите товар.", true); return; }
+  if (isNew && S.db.stock.some(i => i.name.toLowerCase() === name.toLowerCase())) { showMsg("«" + name + "» уже есть в списке — выберите его, а не создавайте заново.", true); return; }
+  if (isNew && !cat) { showMsg("Выберите категорию нового товара.", true); return; }
+  if (S.inc.some(l => l.name.toLowerCase() === name.toLowerCase())) { showMsg("«" + name + "» уже в накладной — поправьте количество в строке.", true); return; }
+  S.inc.push({ name: name, isNew: isNew, cat: cat, qty: qRaw === "" ? "" : num(qRaw), price: pRaw === "" ? "" : num(pRaw), own: own });
+  ["iQty", "iPrice", "iNewName", "iNewOwn"].forEach(id => { byId(id).value = ""; });
+  byId("iSel").value = ""; onIncSel(); renderInc();
+}
+function removeInc(i) { S.inc.splice(i, 1); renderInc(); }
+function renderInc() {
+  byId("incL").innerHTML = S.inc.map((l, i) => '<div class="card" style="padding:10px;"><div class="between"><b>' + esc(l.name) + (l.isNew ? ' <span class="muted small">(новый)</span>' : "") +
+    '</b><button class="x" onclick="removeInc(' + i + ')" aria-label="Убрать">✕</button></div><div class="row">' +
+    '<input type="number" inputmode="decimal" placeholder="Кол-во" style="margin:6px 0 0;" value="' + (l.qty === "" ? "" : l.qty) + '" oninput="incSet(' + i + ',\'qty\',this.value)">' +
+    '<input type="number" inputmode="decimal" placeholder="Цена за шт." style="margin:6px 0 0;" value="' + (l.price === "" ? "" : l.price) + '" oninput="incSet(' + i + ',\'price\',this.value)"></div></div>').join("");
+  incTotal();
+}
+function incSet(i, k, v) { S.inc[i][k] = v === "" ? "" : num(v); incTotal(); }
+function incTotal() { byId("iTot").textContent = money(S.inc.reduce((s, l) => s + num(l.qty) * num(l.price), 0)); }
+function submitIncome() {
+  if (!S.inc.length) { showMsg("Добавьте хотя бы одну строку накладной.", true); return; }
+  const bad = S.inc.filter(l => !(num(l.qty) > 0) || l.price === "" || num(l.price) < 0);
+  if (bad.length) { showMsg("Впишите количество и цену: " + bad.map(l => l.name).join(", ") + ".", true); return; }
+  const total = S.inc.reduce((s, l) => s + num(l.qty) * num(l.price), 0);
+  askConfirm("Провести приход: " + S.inc.length + " поз. на сумму " + money(total) + "?", () => {
+    const lines = S.inc.slice(), inv = byId("iInv").value.trim(), rq = uuid();
+    S.inc = []; byId("iInv").value = ""; renderInc(); closeModal("incM");
+    enqueue({ label: "Приход (" + lines.length + " поз.)", fn: "processStock", args: [S.token, { type: "Приход", requestId: rq, invoice: inv, lines: lines }],
+      ok: r => { toast(r.msg); applyData(r); },
+      fail: m => {
+        dialog({ title: "Приход не проведён", html: '<p style="white-space:pre-wrap;">' + esc(m) + "</p>", ok: "Открыть накладную", cancel: "Закрыть",
+          onOk: () => () => { S.inc = lines; openIncome(); byId("iInv").value = inv; } });
+        return true;
+      } });
+  }, "Провести");
+}
+
+// ---------- списание ----------
+function openWoff() {
+  byId("wSel").innerHTML = '<option value="">Выберите товар</option>' + S.db.stock.filter(i => i.av > 0).map(i =>
+    '<option value="' + esc(i.name) + '">' + esc(i.name) + " (свободно " + fmt(i.av) + ")</option>").join("");
+  openModal("woffM");
+}
+function submitWoff() {
+  const name = byId("wSel").value, qty = num(byId("wQty").value), reason = byId("wReason").value.trim();
+  if (!name) { showMsg("Выберите товар.", true); return; }
+  if (qty <= 0) { showMsg("Укажите количество больше нуля.", true); return; }
+  if (!reason) { showMsg("Укажите причину списания.", true); return; }
+  const item = stockOf(name);
+  if (item && qty > item.av) { showMsg("Свободно только " + fmt(Math.max(0, item.av)) + ". Товар в резерве списать нельзя — он под заказы.", true); return; }
+  askConfirm("Списать «" + name + "» × " + fmt(qty) + "? Это нельзя отменить.", () => {
+    const file = photoFile("wPhoto"), d = { type: "Списание", requestId: uuid(), name: name, qty: qty, reason: reason };
+    ["wQty", "wReason", "wPhoto"].forEach(id => { byId(id).value = ""; }); closeModal("woffM");
+    enqueue({ label: "Списание «" + name + "»", fn: "processStock", args: [S.token, d], prep: photoPrep(file, d, "photo"), ok: r => { toast(r.msg); applyData(r); } });
+  }, "Списать", true);
+}
+
+// ---------- касса (наличные, галочка «Касса») ----------
+function openCash() { S.cashDays = S.cashDays || 0; renderCash(); openModal("cashM"); }
+function cashPeriod(days, el) {
+  S.cashDays = days;
+  Array.prototype.forEach.call(byId("cashChips").children, c => c.classList.remove("on"));
+  el.classList.add("on");
+  renderCash();
+}
+function renderCash() {
+  const c = S.db.cash;
+  if (!c) { byId("cashTop").innerHTML = '<p class="muted">Нет доступа к кассе.</p>'; byId("cashList").innerHTML = ""; return; }
+  const d = ruToDate(S.db.cfg.today), to = new Date(d), from = new Date(d), days = S.cashDays || 0;
+  if (days === 1) { to.setDate(to.getDate() - 1); from.setDate(from.getDate() - 1); } else if (days > 1) from.setDate(from.getDate() - (days - 1));
+  const k = x => x.getFullYear() + ("0" + (x.getMonth() + 1)).slice(-2) + ("0" + x.getDate()).slice(-2);
+  const f = k(from), t = k(to);
+  const rows = c.rows.filter(r => { const x = dk(r.time); return x >= f && x <= t; });
+  const inc = rows.filter(r => r.sum > 0).reduce((a, r) => a + r.sum, 0), out = rows.filter(r => r.sum < 0).reduce((a, r) => a + r.sum, 0);
+  byId("cashTop").innerHTML = '<div class="card" style="text-align:center;"><div class="muted small">Сейчас в кассе (' + esc(c.method) + ')</div>' +
+    '<div style="font-size:30px;font-weight:600;color:var(--ink);margin:4px 0;">' + money(c.balance) + "</div></div>";
+  byId("cashList").innerHTML = '<div class="card">' + kv("Приход за период", money(inc)) + kv("Расход за период", money(-out)) + "</div>" +
+    (rows.length ? '<div class="card"><table class="tbl"><tr><th>Время</th><th>Операция</th><th class="r">Сумма</th><th class="r">Остаток</th></tr>' +
+      rows.slice().reverse().map(r => "<tr><td>" + esc(r.time) + '<br><span class="muted small">' + esc(r.user) + "</span></td><td>" + esc(r.reason ? r.op + ": " + r.reason : r.op) + (r.order ? " #" + esc(r.order) : "") +
+        (r.note ? '<br><span class="muted small">' + esc(r.note) + "</span>" : "") + '</td><td class="r" style="color:' + (r.sum < 0 ? "var(--red)" : "var(--ok)") + ';">' +
+        (r.sum > 0 ? "+" : "") + money(r.sum) + '</td><td class="r">' + money(r.bal) + "</td></tr>").join("") + "</table></div>"
+      : '<p class="muted">За период движений нет.</p>');
+}
+function cashOp(op) {
+  const out = op === "Изъятие";
+  const reasons = (out ? S.db.lists.cashOut : S.db.lists.cashIn) || [];
+  dialog({ title: out ? "Изъять из кассы" : "Внести в кассу",
+    html: '<p class="muted small">В кассе сейчас: ' + money(S.db.cash ? S.db.cash.balance : 0) + "</p>" +
+      '<select id="cxReason"><option value="">Причина</option>' + reasons.map(r => '<option value="' + esc(r) + '">' + esc(r) + "</option>").join("") + "</select>" +
+      '<input type="number" id="cxSum" inputmode="decimal" placeholder="Сумма">' +
+      '<textarea id="cxNote" rows="2" placeholder="Комментарий (по желанию)"></textarea>',
+    ok: out ? "Изъять" : "Внести", danger: out,
+    onOk: root => {
+      const reason = root.querySelector("#cxReason").value, sum = num(root.querySelector("#cxSum").value), note = root.querySelector("#cxNote").value.trim();
+      if (!reason) { dlgError("Выберите причину. Список меняется на листе настроек (ПРИЧИНЫ " + (out ? "ИЗЪЯТИЯ" : "ВНЕСЕНИЯ") + ")."); return false; }
+      if (sum <= 0) { dlgError("Укажите сумму больше нуля."); return false; }
+      if (out && S.db.cash && sum > S.db.cash.balance) { dlgError("В кассе только " + money(S.db.cash.balance) + "."); return false; }
+      return () => enqueue({ label: op + " " + money(sum), fn: "cashOperation", args: [S.token, { op: op, sum: sum, reason: reason, note: note, requestId: uuid() }],
+        ok: r => { toast(r.msg); applyData(r); } });
+    } });
+}
+
+// ---------- сводная отчётность (считает сервер: «Заказы» + «Архив», все листы целиком) ----------
+const REPORTS = [
+  { id: "sales", title: "Продажи", hint: "выручка, средний чек, сравнение", period: true },
+  { id: "staff", title: "Продажи сотрудников", hint: "выручка тому, кто создал заказ", period: true },
+  { id: "money", title: "Деньги", hint: "кто принял оплаты, по способам", period: true, staff: true },
+  { id: "cashio", title: "Внесения и изъятия", hint: "касса: размен, закупки", period: true, staff: true, reasons: true },
+  { id: "goods", title: "Товары и маржа", hint: "что продаём и сколько зарабатываем", period: true },
+  { id: "prices", title: "Закупочные цены", hint: "как менялась цена закупки", period: true, cost: true },
+  { id: "debts", title: "Долги", hint: "кто ещё не доплатил", period: false },
+  { id: "lost", title: "Отмены и отказы", hint: "причины, судьба товара, кто", period: true },
+  { id: "bonus", title: "Бонусы", hint: "начислено, списано, у кого больше", period: true }
+];
+function renderTiles() {
+  byId("repTiles").innerHTML = REPORTS.filter(r => !r.cost || can("cost")).map(r => '<div class="tile" onclick="openReport(\'' + r.id + '\')"><b>' + esc(r.title) + "</b><span>" + esc(r.hint) + "</span></div>").join("");
+}
+function isoOf(d) { return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2); }
+function openReport(id) {
+  const r = REPORTS.find(x => x.id === id); if (!r) return;
+  const t = ruToIso(S.db.cfg.today);
+  S.rep = { id: id, from: t, to: t, user: "", reason: "" };
+  byId("rvTitle").textContent = r.title;
+  let f = "";
+  if (r.period) {
+    f += '<div class="chips"><div class="chip" onclick="repQuick(0)">Сегодня</div><div class="chip" onclick="repQuick(1)">Вчера</div>' +
+      '<div class="chip" onclick="repQuick(7)">7 дней</div><div class="chip" onclick="repQuick(30)">30 дней</div>' +
+      '<div class="chip" onclick="repQuick(\'month\')">Этот месяц</div><div class="chip" onclick="repQuick(\'prev\')">Прошлый месяц</div><div class="chip" onclick="repQuick(\'year\')">Год</div></div>' +
+      '<div class="row"><div><label class="lbl">С</label><input type="date" id="rvFrom" value="' + t + '" onchange="repSet()"></div>' +
+      '<div><label class="lbl">По</label><input type="date" id="rvTo" value="' + t + '" onchange="repSet()"></div></div>';
+  }
+  if (r.staff) f += '<select id="rvUser" onchange="repSet()"><option value="">Все сотрудники</option>' + (S.db.lists.users || []).map(n => '<option value="' + esc(n) + '">' + esc(n) + "</option>").join("") + "</select>";
+  if (r.reasons) {
+    const rs = (S.db.lists.cashIn || []).concat(S.db.lists.cashOut || []).filter((x, i, a) => a.indexOf(x) === i);
+    f += '<select id="rvReason" onchange="repSet()"><option value="">Все причины</option>' + rs.map(n => '<option value="' + esc(n) + '">' + esc(n) + "</option>").join("") + "</select>";
+  }
+  byId("rvFilters").innerHTML = f;
+  byId("rvBox").innerHTML = "";
+  openModal("rvM");
+  renderReport();
+}
+function repQuick(q) {
+  const d = ruToDate(S.db.cfg.today);
+  let from = new Date(d), to = new Date(d);
+  if (q === 1) { from.setDate(from.getDate() - 1); to.setDate(to.getDate() - 1); }
+  else if (q === 7 || q === 30) from.setDate(from.getDate() - (q - 1));
+  else if (q === "month") from = new Date(d.getFullYear(), d.getMonth(), 1);
+  else if (q === "prev") { from = new Date(d.getFullYear(), d.getMonth() - 1, 1); to = new Date(d.getFullYear(), d.getMonth(), 0); }
+  else if (q === "year") { from = new Date(d); from.setFullYear(from.getFullYear() - 1); from.setDate(from.getDate() + 1); }
+  byId("rvFrom").value = isoOf(from); byId("rvTo").value = isoOf(to);
+  repSet();
+}
+function repSet() {
+  if (byId("rvFrom")) { S.rep.from = byId("rvFrom").value; S.rep.to = byId("rvTo").value; }
+  if (byId("rvUser")) S.rep.user = byId("rvUser").value;
+  if (byId("rvReason")) S.rep.reason = byId("rvReason").value;
+  renderReport();
+}
+function repVal(v, t) {
+  if (t === "money") return money(v);
+  if (t === "num") return fmt(v);
+  if (t === "pct") return '<span style="color:' + (num(v) < 0 ? "var(--red)" : "var(--ok)") + ';">' + (num(v) > 0 ? "+" : "") + fmt(v) + "%</span>";
+  return esc(v);
+}
+/** Запросить отчёт у сервера и показать. */
+function renderReport() {
+  if (!S.rep) return;
+  if (S.rep.from && S.rep.to && S.rep.from > S.rep.to) { byId("rvBox").innerHTML = '<p class="err">Дата «С» позже даты «По».</p>'; return; }
+  const opts = { from: S.rep.from, to: S.rep.to, user: S.rep.user, reason: S.rep.reason };
+  call("getReport", [S.token, S.rep.id, opts], rep => {
+    S.repData = rep;
+    let h = '<p class="muted small">' + esc(rep.period) + "</p>";
+    (rep.cards || []).forEach(c => { h += '<div class="card"><h3>' + esc(c.title) + "</h3>" + c.kv.map(x => kv(x[0], repVal(x[1], x[2]))).join("") + "</div>"; });
+    (rep.tables || []).forEach(t => {
+      h += '<div class="card"><h3>' + esc(t.title) + "</h3>" + (t.rows.length ? '<div style="overflow-x:auto;"><table class="tbl"><tr>' +
+        t.cols.map(c => "<th" + (c.t !== "text" ? ' class="r"' : "") + ">" + esc(c.h) + "</th>").join("") + "</tr>" +
+        t.rows.map(r => "<tr>" + r.map((v, i) => "<td" + (t.cols[i].t !== "text" ? ' class="r"' : "") + ">" + repVal(v, t.cols[i].t) + "</td>").join("") + "</tr>").join("") +
+        "</table></div>" : '<p class="muted">Нет данных.</p>') + "</div>";
+    });
+    if (rep.note) h += '<p class="muted small">' + esc(rep.note) + "</p>";
+    h += btnH("Выгрузить в Google Таблицу", "exportRep()", "btn-out");
+    byId("rvBox").innerHTML = h;
+  }, "Считаем отчёт…");
+}
+function exportRep() {
+  if (!S.rep) return;
+  const opts = { from: S.rep.from, to: S.rep.to, user: S.rep.user, reason: S.rep.reason };
+  call("exportReport", [S.token, S.rep.id, opts], r => {
+    dialog({ title: "Отчёт выгружен", html: '<p>Файл «' + esc(r.name) + '» сохранён в папку «SAYCRM_Отчёты» на Google Диске.</p><a class="ph" href="' + esc(r.url) + '" target="_blank" rel="noopener">Открыть таблицу</a>', ok: "Готово", cancel: false });
+  }, "Выгружаем…");
+}
+
+/** Тихое обновление раз в минуту: без окна загрузки, только когда ничего не открыто и не сохраняется. */
+setInterval(() => {
+  if (!S.token || !S.user || S.busy || Q.jobs.length || document.hidden) return;
+  if (document.querySelector(".modal.on") || byId("dlg").classList.contains("on")) return;
+  srv("getInitialData", [S.token],
+    d => { if (!Q.jobs.length && !document.querySelector(".modal.on")) { S.db = d; S.user = d.user; renderAll(); } },
+    err => { const m = cleanErr(err && err.message ? err.message : err); if (m.indexOf("SESSION_EXPIRED") > -1) { showLogin(); showMsg(m.replace(/SESSION_EXPIRED:\s*/, "Сессия закончилась: "), true); } });
+}, 60000);
+
+autoLogin();
+</script>
+</body>
+</html>
