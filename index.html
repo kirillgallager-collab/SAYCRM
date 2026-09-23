@@ -2,6 +2,14 @@
 <!--
   SAYCRM — Index.html (интерфейс, одна страница)
   Версия: v0.8 · 22.09.2026
+  v1.0.2:
+   - Понятные причины, если сервер не отдал данные: просит вход в Google, старая версия кода без doPost,
+     не заполнен API_URL, ошибка HTTP. Раньше писало общее «Сервер не ответил».
+  v1.0.1:
+   - Быстрее вход: после ПИН данные приходят тем же ответом (был второй запрос к серверу).
+   - Способ связи с сервером определяется один раз за сеанс: если обычный запрос заблокирован, дальше
+     сразу идёт запасной путь, а не две попытки на каждое действие.
+   - В диагностике видно способ связи и время последнего ответа сервера.
   v1.0:
    - Один и тот же файл работает и внутри Google, и на своём хостинге (GitHub Pages и т.п.).
      На хостинге запросы уходят на /exec (POST текстом, при блокировке — запасной путь JSONP),
@@ -637,9 +645,9 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 <div id="qBar" role="status" aria-live="polite"></div>
 
 <script>
-const APP_VERSION = "v1.0 · 22.09.2026";
+const APP_VERSION = "v1.0.2 · 22.09.2026";
 /** Ссылка развёртывания Apps Script (…/exec). Пусто — приложение работает внутри Google как раньше. */
-const API_URL = "";
+const API_URL = "https://script.google.com/macros/s/AKfycbwMraVPsYx4oR5FDobQ2ATKKp_tPPf4sRRqLsNnGkd7Jge16QCmTpotNF1JrHPpWiiCDg/exec";
 const R = { ADMIN: "Администратор", MANAGER: "Менеджер", FLORIST: "Флорист", LOGIST: "Логист" };
 const ST = { WAIT: "Ожидает сборки", WORK: "В процессе сборки", DONE: "Собран", PICKUP_WAIT: "Ожидает самовывоза",
   COURIER: "У курьера", PICKED: "Выдан самовывозом", RECEIVED: "Получен покупателем", REFUSED: "Отказ", CANCELED: "Отменен" };
@@ -737,21 +745,47 @@ function askConfirm(text, onYes, okText, danger) {
  */
 /** Внутри Google — google.script.run; на своём хостинге — запрос на /exec. */
 const INSIDE_GAS = typeof google !== "undefined" && google.script && google.script.run;
+let TRANSPORT = "";   // "post" или "jsonp" — выясняем один раз за сеанс, дальше не пробуем дважды
 function srv(fn, args, ok, fail) {
-  if (INSIDE_GAS) { const r = google.script.run.withSuccessHandler(ok).withFailureHandler(fail); r[fn].apply(r, args); return; }
+  const t0 = Date.now();
+  const done = r => { S.lastMs = Date.now() - t0; ok(r); };
+  const bad = e => { S.lastMs = Date.now() - t0; fail(e); };
+  if (INSIDE_GAS) { const r = google.script.run.withSuccessHandler(done).withFailureHandler(bad); r[fn].apply(r, args); return; }
+  if (TRANSPORT === "jsonp") { jsonp(fn, args, done, bad); return; }
+  if (!API_URL) { bad({ message: "В файле index.html не заполнена строка API_URL — вставьте ссылку развёртывания, которая заканчивается на /exec." }); return; }
   fetch(API_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ fn: fn, args: args }) })
-    .then(r => r.json())
-    .then(r => { if (r && r.ok) ok(r.data); else fail({ message: (r && r.error) || "Сервер не ответил" }); })
-    .catch(() => jsonp(fn, args, ok, fail));   // запасной путь, если браузер запретил запрос
+    .then(r => r.text().then(t => ({ status: r.status, text: t })))
+    .then(x => {
+      let r = null;
+      try { r = JSON.parse(x.text); } catch (e) { r = null; }
+      if (!r) {   // пришла страница входа Google или старый код без doPost
+        TRANSPORT = "jsonp";
+        jsonp(fn, args, done, e2 => bad({ message: srvHint(x) }));
+        return;
+      }
+      TRANSPORT = "post";
+      if (r.ok) done(r.data); else bad({ message: r.error || "Сервер вернул ошибку без описания" });
+    })
+    .catch(() => { TRANSPORT = "jsonp"; jsonp(fn, args, done, () => bad({ message: srvHint(null) })); });
 }
 /** Запасной путь: GET со скриптом-ответом (без ограничений браузера на чужие домены). */
+/** Понятная причина, почему сервер не отдал данные. */
+function srvHint(x) {
+  const t = x && x.text ? x.text : "";
+  if (/accounts\.google\.com|ServiceLogin|Требуется вход|Sign in/i.test(t))
+    return "Сервер просит вход в Google. В развёртывании поставьте «У кого есть доступ: Все» и выпустите новую версию.";
+  if (/Script function not found|doPost/i.test(t))
+    return "На сервере старая версия кода: в Code.gs нет doPost. Вставьте новый Code.gs и выпустите новую версию развёртывания.";
+  if (x && x.status && x.status >= 400) return "Сервер ответил ошибкой " + x.status + ". Проверьте ссылку /exec и новую версию развёртывания.";
+  return "Сервер не отвечает. Проверьте: 1) ссылка в API_URL заканчивается на /exec; 2) доступ «Все»; 3) выпущена новая версия развёртывания.";
+}
 function jsonp(fn, args, ok, fail) {
   const cb = "cb" + Date.now().toString(36) + Math.floor(Math.random() * 1e6);
-  const t = setTimeout(() => { delete window[cb]; sc.remove(); fail({ message: "Сервер не ответил" }); }, 60000);
+  const t = setTimeout(() => { delete window[cb]; sc.remove(); fail({ message: "Сервер молчит дольше 30 секунд. Проверьте доступ «Все» в развёртывании." }); }, 30000);
   window[cb] = r => { clearTimeout(t); delete window[cb]; sc.remove(); if (r && r.ok) ok(r.data); else fail({ message: (r && r.error) || "Ошибка" }); };
   const sc = document.createElement("script");
   sc.src = API_URL + "?callback=" + cb + "&fn=" + encodeURIComponent(fn) + "&args=" + encodeURIComponent(JSON.stringify(args));
-  sc.onerror = () => { clearTimeout(t); delete window[cb]; sc.remove(); fail({ message: "Нет связи с сервером" }); };
+  sc.onerror = () => { clearTimeout(t); delete window[cb]; sc.remove(); fail({ message: srvHint(null) }); };
   document.body.appendChild(sc);
 }
 function call(fn, args, ok, text, onFail) {
@@ -834,7 +868,9 @@ function diagText() {
   let ls = "нет"; try { window.localStorage.setItem("t", "1"); window.localStorage.removeItem("t"); ls = "да"; } catch (e) {}
   return ["Версия: " + APP_VERSION, "Telegram.WebApp: " + (tg ? "есть" : "нет"), "Платформа: " + (tg ? (tg.platform || "—") : "—"),
     "initData: " + (tg ? (tg.initData || "").length : 0) + " симв.", "Внутри фрейма: " + top,
-    "Запоминание входа доступно: " + ls, "Экран: " + window.innerWidth + "×" + window.innerHeight].join("\n");
+    "Запоминание входа доступно: " + ls,
+    "Связь с сервером: " + (INSIDE_GAS ? "внутри Google" : (TRANSPORT || "ещё не определена") + (API_URL ? " · свой хостинг" : " · ссылка API не задана")),
+    "Последний ответ сервера: " + (S.lastMs ? S.lastMs + " мс" : "—"), "Экран: " + window.innerWidth + "×" + window.innerHeight].join("\n");
 }
 let verTaps = 0, verTimer = null;
 /** Диагностика скрыта от сотрудников: три касания по надписи с версией. */
@@ -865,7 +901,7 @@ function login() {
     if (r.version !== APP_VERSION) toast("Сервер " + r.version + ", экран " + APP_VERSION + " — выпустите новую версию развёртывания");
     haptic("success");
     enterApp();
-    loadDb();
+    if (r.data) { S.db = r.data; S.user = r.data.user; renderAll(); } else loadDb();   // данные пришли сразу
   }, "Проверяем ПИН…");
 }
 /** Показать экран входа без перезагрузки страницы (перезагрузка внутри Google даёт белый экран). */
