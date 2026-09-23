@@ -2,6 +2,9 @@
 <!--
   SAYCRM — Index.html (интерфейс, одна страница)
   Версия: v0.8 · 22.09.2026
+  v1.1:
+   - Телеграм-бот: в «Админ → Обслуживание» кнопки «Подключить бота», «Проверить бота», «Утро и вечер в чат».
+     Что именно слать — параметры «Бот: …».
   v1.0.2:
    - Понятные причины, если сервер не отдал данные: просит вход в Google, старая версия кода без doPost,
      не заполнен API_URL, ошибка HTTP. Раньше писало общее «Сервер не ответил».
@@ -645,7 +648,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 <div id="qBar" role="status" aria-live="polite"></div>
 
 <script>
-const APP_VERSION = "v1.0.2 · 22.09.2026";
+const APP_VERSION = "v1.1 · 22.09.2026";
 /** Ссылка развёртывания Apps Script (…/exec). Пусто — приложение работает внутри Google как раньше. */
 const API_URL = "https://script.google.com/macros/s/AKfycbwMraVPsYx4oR5FDobQ2ATKKp_tPPf4sRRqLsNnGkd7Jge16QCmTpotNF1JrHPpWiiCDg/exec";
 const R = { ADMIN: "Администратор", MANAGER: "Менеджер", FLORIST: "Флорист", LOGIST: "Логист" };
@@ -1688,7 +1691,10 @@ function renderAdm() {
   } else if (sec === "tools") {
     h = '<p class="muted small">Ночные задачи включаются один раз: каждую ночь около 3:00 — копия всей таблицы в папку «SAYCRM_Backups» и перенос закрытых заказов старше срока в архив.</p>' +
       btnGroup([btnH("Резервная копия сейчас", "admTool('backup')", "btn-main"), btnH("Перенести в архив", "admTool('archive')", "btn-out"),
-        btnH("Включить ночные задачи", "admTool('nightly')", "btn-soft"), btnH("Проверить и починить базу", "admTool('setup')", "btn-soft")]);
+        btnH("Включить ночные задачи", "admTool('nightly')", "btn-soft"), btnH("Проверить и починить базу", "admTool('setup')", "btn-soft")]) +
+      '<h3 style="margin-top:16px;">Телеграм-бот</h3><p class="muted small">Сначала впишите TG_BOT_TOKEN в «Параметры», потом «Подключить бота», напишите боту в чат /id и вставьте номер в TG_CHAT_ID.</p>' +
+      btnGroup([btnH("Подключить бота", "admTool('tgconnect')", "btn-main"), btnH("Проверить бота", "admTool('tgtest')", "btn-out"),
+        btnH("Утро и вечер в чат", "admTool('tgdaily')", "btn-soft")]);
   }
   byId("admBody").innerHTML = h;
   if (sec === "lists") admListShow();
@@ -1769,7 +1775,8 @@ function admSaveItem(i) {
   call("adminSaveItem", [S.token, it], r => { toast(r.msg); applyData(r); S.admSec = "items"; byId("admTitle").textContent = "Товары"; admReload(); }, "Сохраняем…");
 }
 function admTool(t) {
-  const txt = { backup: "Сделать резервную копию всей таблицы?", archive: "Перенести закрытые заказы старше срока в архив?", nightly: "Включить ночные задачи (копия + архив каждую ночь)?", setup: "Проверить и починить базу? Данные не стираются." }[t];
+  const txt = { backup: "Сделать резервную копию всей таблицы?", archive: "Перенести закрытые заказы старше срока в архив?", nightly: "Включить ночные задачи (копия + архив каждую ночь)?", setup: "Проверить и починить базу? Данные не стираются.",
+    tgconnect: "Подключить телеграм-бота к этому приложению?", tgtest: "Отправить тестовое сообщение в чат?", tgdaily: "Включить утренние и вечерние сообщения в чат?" }[t];
   askConfirm(txt, () => call("adminTool", [S.token, t], r => { showMsg(r.msg); applyData(r); }, "Выполняем…"), "Да");
 }
 
