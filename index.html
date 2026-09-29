@@ -1,7 +1,12 @@
 <!DOCTYPE html>
 <!--
   SAYCRM — Index.html (интерфейс, одна страница)
-  Версия: v1.14 · 29.09.2026
+  Версия: v1.15 · 29.09.2026
+  v1.15:
+   - «Прайсы»: отключённые позиции видны тому, кто создаёт прайс (серые, «Отключен», в конце списка) — можно открыть
+     и включить обратно. В заказ отключённую позицию не взять. Исправлено: при включённых фильтрах «Изменить» и
+     «В заказ» открывали не ту позицию (номер брался из отфильтрованного списка).
+   - «Закупка» считает как бот: минимум товара, а если он не задан — «Критический остаток».
   v1.14:
    - Зарплата счётом: в отчёте «Зарплата» и расшифровке — «Долг на начало», «Начислено», «Выдано», «Остаток»
      (остаток переносится в следующий период). Кнопка «Выплатить зарплату»: список сотрудников с остатком, суммы
@@ -393,6 +398,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 #qBar.off,:root[data-theme="dark"] #qBar.off{background:#b3261e;color:#fff}
 .paysub{display:flex;justify-content:space-between;align-items:center;gap:8px}.paysub .inh{font-weight:400;text-transform:none;font-size:12px;display:flex;align-items:center;gap:4px;white-space:nowrap}.paysub .inh input{width:auto;margin:0}.inh-on{opacity:.6}
 .payrow{border-top:1px solid var(--line);padding:10px 0}.payrow input[type=number]{margin:6px 0 0}
+.pcard.off{opacity:.6}.pcard .status.off{align-self:flex-start;margin:4px 0}
 #syncBar{position:fixed;left:50%;top:44px;transform:translateX(-50%);background:var(--ok-bg);color:var(--ink);border:1px solid var(--line);border-radius:18px;padding:4px 12px;font-size:12px;z-index:4590;display:none}
 .qspin{width:12px;height:12px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:sp .9s linear infinite;flex:0 0 12px}
 @media print{body *{visibility:hidden}#printArea,#printArea *{visibility:visible}#printArea{display:block!important;position:absolute;left:0;top:0;width:100%;background:#fff;color:#000}}
@@ -883,7 +889,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 <div id="syncBar" role="status">Обновляю данные…</div>
 
 <script>
-const APP_VERSION = "v1.14 · 29.09.2026";
+const APP_VERSION = "v1.15 · 29.09.2026";
 /** Ссылка развёртывания Apps Script (…/exec). Пусто — приложение работает внутри Google как раньше. */
 const API_URL = "https://script.google.com/macros/s/AKfycbwMraVPsYx4oR5FDobQ2ATKKp_tPPf4sRRqLsNnGkd7Jge16QCmTpotNF1JrHPpWiiCDg/exec";   // ← СВОЙ ХОСТИНГ: вставьте между кавычками ссылку развёртывания, которая заканчивается на /exec
 const R = { ADMIN: "Администратор", MANAGER: "Менеджер", FLORIST: "Флорист", LOGIST: "Логист", COURIER: "Курьер" };
@@ -1926,7 +1932,7 @@ function setMin(ix) {
   if (needShift()) return;
   const it = S.db.stock[ix]; if (!it) return;
   const name = it.name;
-  dialog({ title: "Постоянный минимум: " + name, html: '<p class="muted small">Сколько должно быть на складе всегда (для закупки). Пусто — не задан.</p><input type="number" id="minV" inputmode="decimal" value="' + (it.min !== "" && it.min != null ? it.min : "") + '">',
+  dialog({ title: "Постоянный минимум: " + name, html: '<p class="muted small">Сколько должно быть на складе всегда (для закупки). Пусто — общий «Критический остаток» (' + fmt(S.db.cfg.critical) + ').</p><input type="number" id="minV" inputmode="decimal" value="' + (it.min !== "" && it.min != null ? it.min : "") + '">',
     ok: "Сохранить", onOk: root => { const v = root.querySelector("#minV").value.trim();
       return () => enqueue({ label: "Минимум «" + name + "»", fn: "setStockMin", args: [S.token, name, v], ok: r => { toast(r.msg); applyData(r); } }); } });
 }
@@ -2688,12 +2694,15 @@ function renderPrices() {
   }
   const fI = byId("prItem").value, fMin = num(byId("prMin").value), fMax = num(byId("prMax").value), fFlw = num(byId("prFlw").value);
   const flowers = p => p.items.reduce((a, x) => a + ((stockOf(x.name) || {}).cat === "Цветы" ? x.qty : 0), 0);
-  L = L.filter(p => (!fI || p.items.some(x => x.name === fI)) && (!fMin || p.price >= fMin) && (!fMax || p.price <= fMax) && (!fFlw || flowers(p) >= fFlw));
-  byId("prList").innerHTML = L.length ? '<div class="grid3">' + L.map((p, i) => '<div class="pcard"><b>' + esc(p.name) + '</b><span class="p">' + money(p.price) + "</span>" +
+  const off = p => p.status === "Отключен";
+  L = L.filter(p => (can("price") || !off(p)) && (!fI || p.items.some(x => x.name === fI)) && (!fMin || p.price >= fMin) && (!fMax || p.price <= fMax) && (!fFlw || flowers(p) >= fFlw));
+  L = L.filter(p => !off(p)).concat(L.filter(off));   // отключённые — в конце
+  byId("prList").innerHTML = L.length ? '<div class="grid3">' + L.map(p => { const i = S.db.prices.indexOf(p);   // номер в полном списке, а не в отфильтрованном
+    return '<div class="pcard' + (off(p) ? " off" : "") + '"><b>' + esc(p.name) + "</b>" + (off(p) ? '<span class="status off">Отключен</span>' : "") + '<span class="p">' + money(p.price) + "</span>" +
     (p.desc ? '<div class="muted small">' + esc(p.desc) + "</div>" : "") +
     '<div class="muted small">' + (p.items.length ? p.items.map(x => esc(x.name) + "×" + fmt(x.qty)).join(", ") : "состав не задан") + "</div>" +
-    (can("order") && p.items.length ? btnH("В заказ", "priceToOrder(" + i + ")", "btn-main") : "") +
-    (can("price") ? btnH("Изменить", "prEdit(" + i + ")", "btn-soft") : "") + "</div>").join("") + "</div>"
+    (can("order") && p.items.length && !off(p) ? btnH("В заказ", "priceToOrder(" + i + ")", "btn-main") : "") +
+    (can("price") ? btnH(off(p) ? "Изменить / включить" : "Изменить", "prEdit(" + i + ")", "btn-soft") : "") + "</div>"; }).join("") + "</div>"
     : '<p class="muted" style="text-align:center;">Ничего не подошло — сбросьте фильтры.</p>';
 }
 function prEdit(i) {
@@ -2737,6 +2746,7 @@ function prSave() {
 function priceToOrder(i) {
   if (needShift()) return;
   const p = S.db.prices[i]; if (!p || !p.items.length) { showMsg("У позиции не задан состав — добавьте его или соберите заказ вручную.", true); return; }
+  if (p.status === "Отключен") { showMsg("Позиция «" + p.name + "» отключена — включите её в «Прайсах», чтобы брать в заказ.", true); return; }
   resetOrderForm(); openOrderForm();
   S.cart = p.items.map(x => ({ name: x.name, qty: x.qty, price: (stockOf(x.name) || {}).rrp || 0 }));
   renderCart();
@@ -3180,7 +3190,7 @@ function copyText(t) {
 // ---------- закупка ----------
 function buyRows() {
   return S.db.stock.filter(i => i.cat !== VIT).map(i => {
-    const min = i.min !== "" && i.min != null ? num(i.min) : 0;
+    const min = i.min !== "" && i.min != null ? num(i.min) : num(S.db.cfg.critical);   // как у бота: нет своего минимума — «Критический остаток»
     return { name: i.name, phys: i.phys, res: i.res, min: min, buy: Math.max(0, Math.round((min + i.res - i.phys) * 100) / 100) };
   }).filter(x => x.buy > 0);
 }
