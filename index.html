@@ -1,7 +1,15 @@
 <!DOCTYPE html>
 <!--
   SAYCRM — Index.html (интерфейс, одна страница)
-  Версия: v1.15 · 29.09.2026
+  Версия: v1.16 · 29.09.2026
+  v1.16:
+   - Деньги у курьера: «Касса» → «Деньги курьеров» — принять от курьера (сколько сдал), выдать на сдачу, корректировка
+     (администратор); блок «У курьеров на руках». Курьер видит «На руках» в «Итогах дня», на плашке смены и на вкладке
+     «Выдача»; «Закончить смену» с деньгами на руках — напоминание сдать. В окне оплаты по заказу «У курьера» — подсказка,
+     что наличные запишутся на курьера.
+   - «Итоги дня»: «Выдал» — самовывоз, который выдал сотрудник, и доставки, которые вручил курьер; логисту отдельно —
+     «Передал курьеру». В карточке заказа — «Вручён» (время).
+   - После переименования: вход под новым именем отправляет несохранённые действия, записанные под прежним именем.
   v1.15:
    - «Прайсы»: отключённые позиции видны тому, кто создаёт прайс (серые, «Отключен», в конце списка) — можно открыть
      и включить обратно. В заказ отключённую позицию не взять. Исправлено: при включённых фильтрах «Изменить» и
@@ -818,6 +826,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
     <button class="btn-main" onclick="cashOp('Внесение')">+ Внести</button>
     <button class="btn-out" onclick="cashOp('Изъятие')">− Изъять</button>
     <button class="btn-soft" onclick="cashRecountUi()">Пересчёт кассы</button>
+    <button class="btn-soft" onclick="courierCashUi()">Деньги курьеров</button>
   </div>
   <div class="chips" id="cashChips">
     <div class="chip on" onclick="cashPeriod(0,this)">Сегодня</div>
@@ -889,9 +898,9 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 <div id="syncBar" role="status">Обновляю данные…</div>
 
 <script>
-const APP_VERSION = "v1.15 · 29.09.2026";
+const APP_VERSION = "v1.16 · 29.09.2026";
 /** Ссылка развёртывания Apps Script (…/exec). Пусто — приложение работает внутри Google как раньше. */
-const API_URL = "https://script.google.com/macros/s/AKfycbwMraVPsYx4oR5FDobQ2ATKKp_tPPf4sRRqLsNnGkd7Jge16QCmTpotNF1JrHPpWiiCDg/exec";   // ← СВОЙ ХОСТИНГ: вставьте между кавычками ссылку развёртывания, которая заканчивается на /exec
+const API_URL = "https://script.google.com/macros/s/AKfycbwMraVPsYx4oR5FDobQ2ATKKp_tPPf4sRRqLsNnGkd7Jge16QCmTpotNF1JrHPpWiiCDg/exec";
 const R = { ADMIN: "Администратор", MANAGER: "Менеджер", FLORIST: "Флорист", LOGIST: "Логист", COURIER: "Курьер" };
 const ST = { WAIT: "Ожидает сборки", WORK: "В процессе сборки", DONE: "Собран", PICKUP_WAIT: "Ожидает самовывоза",
   COURIER: "У курьера", PICKED: "Выдан самовывозом", RECEIVED: "Получен покупателем", REFUSED: "Отказ", CANCELED: "Отменен" };
@@ -1130,6 +1139,17 @@ function qSave() {
 /** После входа: действия этого сотрудника, не ушедшие в прошлый раз, — снова в очередь. */
 function qRestore() {
   if (!S.user) return;
+  const was = S.was || [];
+  Q.jobs.forEach(j => { if (was.indexOf(j.user) > -1) j.user = S.user.name; });   // переименовали — это мои действия
+  was.forEach(n => {   // очередь, сохранённая на устройстве под прежним именем, — к себе
+    let old = [];
+    try { old = JSON.parse(lsGet(qKey(n)) || "[]") || []; } catch (e) { old = []; }
+    if (!old.length) return;
+    let mine = [];
+    try { mine = JSON.parse(lsGet(qKey(S.user.name)) || "[]") || []; } catch (e) { mine = []; }
+    lsSet(qKey(S.user.name), JSON.stringify(mine.concat(old.map(j => Object.assign(j, { user: S.user.name })))));
+    lsSet(qKey(n), "");
+  });
   const foreign = Q.jobs.filter(j => j.user !== S.user.name);
   if (foreign.length) {   // остались от другого сотрудника (сессия закончилась, вошёл другой) — ждут его входа
     Q.jobs = Q.jobs.filter(j => j.user === S.user.name);
@@ -1164,7 +1184,9 @@ function runQ() {
       if (isNetErr(m)) { Q.busy = false; Q.offline = true; updQ(); qRetryLater(); return; }   // связи нет — ждём и повторяем
       Q.offline = false;
       if (m.indexOf("SESSION_EXPIRED") > -1) {   // очередь сохранена — уйдёт после входа
-        Q.busy = false; updQ(); showLogin(true); showMsg("Сессия закончилась. Войдите — несохранённые действия (" + Q.jobs.length + ") отправятся сами.", true); return;
+        Q.busy = false; updQ(); showLogin(true);
+        showMsg(/имя изменено/.test(m) ? m.replace(/SESSION_EXPIRED:\s*/, "").replace(/^в/, "В") + " Ждут отправки: " + Q.jobs.length + "."
+          : "Сессия закончилась. Войдите — несохранённые действия (" + Q.jobs.length + ") отправятся сами.", true); return;
       }
       if (isShiftErr(m)) {   // смена закрылась, пока действие ждало очереди
         const txt = "«" + j.label + "» не сохранено: смена закрыта. Нажмите «Начать смену» вверху экрана и повторите.";
@@ -1249,6 +1271,7 @@ function login() {
   let dev = lsGet("saycrm_dev"); if (!dev) { dev = uuid(); lsSet("saycrm_dev", dev); }
   call("authUser", [pin, dev], r => {
     S.token = r.token; S.user = { name: r.name, role: r.role, caps: r.caps || {} };
+    S.was = r.was || [];   // прежние имена (переименовали) — их несохранённые действия уйдут под новым именем
     lsSet(TOKEN_KEY, r.token);
     byId("pin").value = "";
     if (r.version !== APP_VERSION) toast("Сервер " + r.version + ", экран " + APP_VERSION + " — выпустите новую версию развёртывания");
@@ -1434,14 +1457,19 @@ function renderShiftBar() {
   const sh = S.db.shift || {};
   el.style.display = "flex";
   el.className = "shiftbar" + (sh.open ? " on" : "");
+  const hand = onHandTxt();
   el.innerHTML = sh.open
-    ? "<span>Смена идёт с " + esc(String(sh.start || "").slice(11)) + (String(sh.start || "").slice(0, 10) !== S.db.cfg.today ? " (" + esc(String(sh.start).slice(0, 5)) + ")" : "") + '</span><button class="btn-soft" onclick="endShift()">Закончить смену</button>'
-    : "<span>" + (S.user.role === R.ADMIN ? "Смена не начата (администратору необязательно)" : "Смена закрыта — только просмотр") + '</span><button class="btn-main" onclick="startShift()">Начать смену</button>';
+    ? "<span>Смена идёт с " + esc(String(sh.start || "").slice(11)) + (String(sh.start || "").slice(0, 10) !== S.db.cfg.today ? " (" + esc(String(sh.start).slice(0, 5)) + ")" : "") + hand + '</span><button class="btn-soft" onclick="endShift()">Закончить смену</button>'
+    : "<span>" + (S.user.role === R.ADMIN ? "Смена не начата (администратору необязательно)" : "Смена закрыта — только просмотр") + hand + '</span><button class="btn-main" onclick="startShift()">Начать смену</button>';
 }
+/** Деньги на руках у сотрудника (курьера): null — не ведётся. */
+function onHand() { const c = S.db && S.db.ccash; return c && c.mine !== null && c.mine !== undefined ? num(c.mine) : null; }
+function onHandTxt() { const m = onHand(); return m === null ? "" : ' · <b class="' + (m > 0 ? "pay" : "") + '">на руках ' + esc(money(m)) + "</b>"; }
 function startShift() { call("shiftStart", [S.token], r => { haptic("success"); toast(r.msg); applyData(r); }, "Начинаем смену…"); }
 function endShift() {
   if (Q.jobs.length) { showMsg("Ещё сохраняются действия (" + Q.jobs.length + "). Подождите пару секунд и закончите смену.", true); return; }
-  askConfirm("Закончить смену? После этого изменения будут недоступны до начала новой смены.", () => call("shiftEnd", [S.token], r => { showMsg(r.msg); applyData(r); }, "Закрываем смену…"), "Закончить смену");
+  const m = onHand();
+  askConfirm((m > 0 ? "⚠ У вас на руках " + money(m) + " — сдайте их в кассу.\n\n" : "") + "Закончить смену? После этого изменения будут недоступны до начала новой смены.", () => call("shiftEnd", [S.token], r => { showMsg(r.msg); applyData(r); }, "Закрываем смену…"), "Закончить смену");
 }
 /** Моя зарплата за период (любой сотрудник, только своя). */
 function myPayUi() {
@@ -1469,7 +1497,11 @@ function staffStats(name, from, to) {
   const lost = o => o.status === ST.CANCELED || o.status === ST.REFUSED;
   const O = allOrdersC();
   const made = O.filter(o => o.creator === name && inR(o.created) && !lost(o));
-  return { made: made, built: O.filter(o => o.assembler === name && inR(o.tDone)), given: O.filter(o => o.logist === name && inR(o.tOut)),
+  // «Выдал»: самовывоз, выданный этим сотрудником, и доставки, которые он вручил как курьер; «Передал курьеру» — отдельно
+  const handedOver = o => o.status !== ST.PICKED && !!o.courier;
+  return { made: made, built: O.filter(o => o.assembler === name && inR(o.tDone)),
+    given: O.filter(o => (o.logist === name && inR(o.tOut) && !handedOver(o)) || (o.courier === name && o.status === ST.RECEIVED && inR(o.tDlv))),
+    handed: O.filter(o => o.logist === name && inR(o.tOut) && handedOver(o)),
     pays: allPaysC().filter(p => p.user === name && inR(p.time)) };
 }
 function openDay() {
@@ -1486,6 +1518,7 @@ function renderDay() {
   const st = staffStats(S.user.name, day, day);
   byId("dayBox").innerHTML = '<div class="card"><h3>' + esc(S.user.name) + "</h3>" +
     kv("Создал заказов", st.made.length + " на " + money(st.made.reduce((a, o) => a + o.fact, 0))) + kv("Собрал", String(st.built.length)) + kv("Выдал", String(st.given.length)) +
+    (st.handed.length ? kv("Передал курьеру", String(st.handed.length)) : "") + (onHand() !== null ? kv("На руках сейчас", "<b>" + money(onHand()) + "</b>") : "") +
     "</div>" + '<div class="card"><h3>Принял денег</h3>' + payLines(st.pays) + "</div>" +
     (S.db.cfg.payroll ? btnH("Моя зарплата за период", "myPayUi()", "btn-out") : "");
 }
@@ -1568,7 +1601,9 @@ function renderLog() {
   if (!S.user) return;
   const l = S.db.orders.filter(o => AFTER_ASSEMBLY.indexOf(o.status) > -1).sort((a, b) => a.dKey.localeCompare(b.dKey));
   initSwipe("listL");
-  byId("listL").innerHTML = l.length ? l.map(orderCard).join("") : '<p class="muted" style="text-align:center;">Собранных заказов нет.</p>';
+  const m = onHand();
+  byId("listL").innerHTML = (m !== null ? '<div class="card between"><span>Деньги у меня на руках</span><b class="' + (m > 0 ? "pay" : "") + '">' + money(m) + "</b></div>" : "") +
+    (l.length ? l.map(orderCard).join("") : '<p class="muted" style="text-align:center;">Собранных заказов нет.</p>');
 }
 
 // ---------- карточка заказа ----------
@@ -1603,7 +1638,7 @@ function openCard(id) {
     kv("Получение", esc(o.dlvType)) + (o.courier ? kv("Курьер", esc(o.courier) + (o.courierKind ? ' <span class="muted small">(' + esc(o.courierKind.toLowerCase()) + ")</span>" : "") + (o.courierCt ? "<br>" + esc(o.courierCt) : "")) : "") +
     (o.courier ? kv("Доставка обошлась", money(o.dlvCost) + (o.dlvClient && o.dlvCost > o.dlvClient ? ' <span class="neg small">(+' + money(o.dlvCost - o.dlvClient) + " к оплате клиента)</span>" : "")) : "") + kv("Создал", esc(o.creator)) +
     (o.assembler !== "-" ? kv("Собирает / собрал", esc(o.assembler)) : "") + (o.logist !== "-" ? kv("Выдал", esc(o.logist)) : "") +
-    kv("Создан", esc(o.created)) + kv("Взят в сборку", esc(o.tTaken)) + kv("Собран", esc(o.tDone)) + kv("Выдан", esc(o.tOut)) +
+    kv("Создан", esc(o.created)) + kv("Взят в сборку", esc(o.tTaken)) + kv("Собран", esc(o.tDone)) + kv(o.courier && o.status !== ST.PICKED ? "Передан курьеру" : "Выдан", esc(o.tOut)) + kv("Вручён", esc(o.tDlv)) +
     (o.costFact ? kv("Себестоимость", money(o.costFact)) + kv("Маржа", money(o.margin)) : "") +
     kv("Причина", esc(o.reason)) + kv("Судьба товара", esc(o.fate));
   h += '<div style="height:12px;"></div>';
@@ -1777,7 +1812,8 @@ function payDialog(o, exact, onPay) {
   S.payNeed = debt;
   dialog({ title: (exact ? "Оплата при выдаче #" : "Принять оплату #") + o.id,
     html: '<div class="pay-big">' + (exact ? "Взять с клиента: " : "Долг: ") + money(debt) + "</div>" +
-      '<div id="payRows"></div><button class="btn-out" onclick="addPayRow()">+ ещё способ</button><p id="payInfo" class="muted small"></p>',
+      '<div id="payRows"></div><button class="btn-out" onclick="addPayRow()">+ ещё способ</button><p id="payInfo" class="muted small"></p>' +
+      (o.status === ST.COURIER && o.courier ? '<p class="muted small">Наличные запишутся на руки курьеру «' + esc(o.courier) + '» — в кассу попадут, когда он их сдаст.</p>' : ""),
     ok: exact ? "Оплачено, выдать" : "Принять", onOk: root => {
       const rows = Array.prototype.slice.call(root.querySelectorAll(".payrow"));
       const pays = rows.map(r => ({ method: r.querySelector("select").value, sum: num(r.querySelector("input").value) })).filter(p => p.sum > 0 || p.method);
@@ -3692,8 +3728,11 @@ function renderCash() {
   const f = k(from), t = k(to);
   const rows = c.rows.filter(r => { const x = dk(r.time); return x >= f && x <= t; });
   const inc = rows.filter(r => r.sum > 0).reduce((a, r) => a + r.sum, 0), out = rows.filter(r => r.sum < 0).reduce((a, r) => a + r.sum, 0);
+  const cl = ((S.db.ccash && S.db.ccash.list) || []).filter(x => x.bal);
   byId("cashTop").innerHTML = '<div class="card" style="text-align:center;"><div class="muted small">Сейчас в кассе (' + esc(c.method) + ')</div>' +
-    '<div style="font-size:30px;font-weight:600;color:var(--ink);margin:4px 0;">' + money(c.balance) + "</div></div>";
+    '<div style="font-size:30px;font-weight:600;color:var(--ink);margin:4px 0;">' + money(c.balance) + "</div></div>" +
+    (cl.length ? '<div class="card"><h3>У курьеров на руках</h3>' + cl.map(x => kv(x.name, money(x.bal))).join("") + kv("Всего", "<b>" + money(cl.reduce((a, x) => a + num(x.bal), 0)) + "</b>") +
+      '<p class="muted small" style="margin:6px 0 0;">Наличные, которые курьеры взяли у клиентов или получили на сдачу. В кассу попадут, когда курьер сдаст — «Деньги курьеров».</p></div>' : "");
   byId("cashList").innerHTML = '<div class="card">' + kv("Приход за период", money(inc)) + kv("Расход за период", money(-out)) + "</div>" +
     (rows.length ? '<div class="card"><table class="tbl"><tr><th>Время</th><th>Операция</th><th class="r">Сумма</th><th class="r">Остаток</th></tr>' +
       rows.slice().reverse().map(r => "<tr><td>" + esc(r.time) + '<br><span class="muted small">' + esc(r.user) + "</span></td><td>" + esc(r.reason ? r.op + ": " + r.reason : r.op) + (r.order ? " #" + esc(r.order) : "") +
@@ -3719,6 +3758,42 @@ function cashOp(op) {
       return () => enqueue({ label: op + " " + money(sum), fn: "cashOperation", args: [S.token, { op: op, sum: sum, reason: reason, note: note, requestId: uuid() }],
         ok: r => { toast(r.msg); applyData(r); } });
     } });
+}
+
+// ---------- деньги у курьеров (галочка «Касса») ----------
+/** Касса ↔ курьер: принять от курьера, выдать на сдачу, корректировка (администратор). */
+function courierCashUi() {
+  if (needShift()) return;
+  const list = (S.db.ccash && S.db.ccash.list) || [], admin = S.user.role === R.ADMIN;
+  if (!list.length) { showMsg("Курьеров нет: добавьте сотрудника с должностью «Курьер» (Админ → Сотрудники). Деньги внешних курьеров появятся здесь, когда они примут оплату.", true); return; }
+  dialog({ title: "Деньги курьеров", ok: "Записать",
+    html: '<label class="lbl">Курьер</label><select id="ccW" onchange="ccHint()"><option value="">Выберите курьера</option>' +
+      list.map(x => '<option value="' + esc(x.name) + '">' + esc(x.name) + " — на руках " + esc(money(x.bal)) + "</option>").join("") + "</select>" +
+      '<label class="opt"><input type="radio" name="ccOp" value="accept" checked onchange="ccHint()">Принять от курьера (сдал в кассу)</label>' +
+      '<label class="opt"><input type="radio" name="ccOp" value="give" onchange="ccHint()">Выдать на сдачу (из кассы — на руки курьеру)</label>' +
+      (admin ? '<label class="opt"><input type="radio" name="ccOp" value="adj" onchange="ccHint()">Корректировка (недостача, ошибка) — касса не меняется</label>' : "") +
+      '<input type="number" id="ccS" inputmode="decimal" placeholder="Сумма"><input id="ccN" placeholder="Комментарий (по желанию)">' +
+      '<p id="ccH" class="muted small"></p>',
+    onOk: root => {
+      const who = root.querySelector("#ccW").value, op = root.querySelector("input[name=ccOp]:checked").value, sum = num(root.querySelector("#ccS").value), note = root.querySelector("#ccN").value.trim();
+      const x = list.find(c => c.name === who);
+      if (!x) { dlgError("Выберите курьера."); return false; }
+      if (op !== "adj" && sum <= 0) { dlgError("Укажите сумму больше нуля."); return false; }
+      if (op === "accept" && sum > num(x.bal)) { dlgError("У курьера на руках только " + money(x.bal) + "."); return false; }
+      if (op === "give" && !x.emp) { dlgError("На сдачу можно выдать только нашему курьеру."); return false; }
+      if (op === "give" && S.db.cash && sum > S.db.cash.balance) { dlgError("В кассе только " + money(S.db.cash.balance) + "."); return false; }
+      if (op === "adj" && (!sum || !note)) { dlgError("Корректировка: сумма (+ или −) и причина обязательны."); return false; }
+      return () => enqueue({ label: ({ accept: "Принято от курьера ", give: "На сдачу курьеру ", adj: "Корректировка курьера " })[op] + who + " " + fmt(sum), fn: "courierCashOp",
+        args: [S.token, { op: op, courier: who, sum: sum, note: note, requestId: uuid() }], ok: r => { showMsg(r.msg); applyData(r); } });
+    } });
+  ccHint();
+}
+function ccHint() {
+  const el = byId("ccH"); if (!el) return;
+  const x = ((S.db.ccash && S.db.ccash.list) || []).find(c => c.name === byId("ccW").value), op = (document.querySelector("input[name=ccOp]:checked") || {}).value;
+  if (x && op === "accept") byId("ccS").value = num(x.bal) > 0 ? x.bal : "";
+  el.textContent = !x ? "" : op === "accept" ? "На руках " + money(x.bal) + ". Впишите, сколько курьер сдал фактически: меньше — остаток останется за ним." :
+    op === "give" ? "Сумма уйдёт из кассы и будет числиться у курьера на руках." : "Плюс — добавить на руки, минус — снять (например, недостачу удержали из зарплаты — удержание оформите в «Зарплате»).";
 }
 
 // ---------- деньги: общий фильтр периода для «Расходов» и «Табеля» ----------
